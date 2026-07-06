@@ -13,3 +13,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
+supabase:
+  url: ${SUPABASE_URL}
+  anon-key: ${SUPABASE_ANON_KEY}
