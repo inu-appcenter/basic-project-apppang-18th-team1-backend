@@ -6,31 +6,23 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/*
- * ==========================================
- * 엔티티 명  : Member (회원)
- * 테이블 구성:
- * id(PK)
- * username(사용자 이름), password(비밀번호), nickname(닉네임)
- * email(이메일), phoneNumber(전화번호)
- * ==========================================
- */
 @Entity
-@Table(name = "Member")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // 기본 생성자 접근을 막아 안전성 확보
-public class Member { // 혹은 Member (팀 내 컨벤션에 맞게 선택)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "member")
+public class Member {
 
-    //Supabase Auth 의 UUID 문자열이 들어옴
     @Id
     private String id;
 
-    //username은 겹칠 수 있으므로 unique지정 안함
     @Column(nullable = false)
     private String username;
 
     @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false)
+    private String name;
 
     @Column(nullable = false)
     private String nickname;
@@ -40,21 +32,21 @@ public class Member { // 혹은 Member (팀 내 컨벤션에 맞게 선택)
     private String email;
 
     @Column(nullable = false)
-    private String phoneNumber;
+    private String phoneNum;
 
     @Builder
-    public Member(String id, String email, String password, String username, String nickname, String phoneNumber) {
+    public Member(String id, String email, String password, String username, String nickname, String phoneNum, String name) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.username = username;
         this.nickname = nickname;
-        this.phoneNumber = phoneNumber;
+        this.phoneNum = phoneNum;
+        this.name = name;
     }
 
     // 비밀번호 변경을 위한 메서드
     public void updatePassword(String newPassword) {
         this.password = newPassword;
     }
-
 }
