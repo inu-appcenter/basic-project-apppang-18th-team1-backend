@@ -1,18 +1,17 @@
-package com.team1.appang.controller;
+package com.team1.appang.controller.auth;
 
 /*
 설명: 비밀번호 재설정에 사용하는 코드
 MemberPasswordService를 사용한다
  */
 
-import com.team1.appang.dto.MessageResponse;
-import com.team1.appang.dto.ResetPasswordRequest;
-import com.team1.appang.service.MemberPasswordService;
+import com.team1.appang.dto.auth.MessageResponse;
+import com.team1.appang.dto.auth.ResetPasswordRequest;
+import com.team1.appang.service.auth.MemberPasswordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 @RestController
 @RequestMapping("/api/auth/password") //공동주소 묶기

@@ -1,4 +1,4 @@
-package com.team1.appang.dto;
+package com.team1.appang.dto.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
