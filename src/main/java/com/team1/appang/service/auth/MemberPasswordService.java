@@ -1,6 +1,6 @@
-package com.team1.appang.service;
+package com.team1.appang.service.auth;
 
-import com.team1.appang.dto.ResetPasswordRequest;
+import com.team1.appang.dto.auth.ResetPasswordRequest;
 import com.team1.appang.entity.Member;
 import com.team1.appang.repository.MemberRepository;
 import jakarta.transaction.Transactional;

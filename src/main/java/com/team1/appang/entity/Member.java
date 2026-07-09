@@ -12,17 +12,17 @@ import lombok.NoArgsConstructor;
 @Table(name = "member")
 public class Member {
 
-    @Id
-    private String id;
 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    private Long id;
+
+    //username은 겹칠 수 있으므로 unique지정 안함
     @Column(nullable = false)
     private String username;
 
     @Column(nullable = false)
     private String password;
-
-    @Column(nullable = false)
-    private String name;
 
     @Column(nullable = false)
     private String nickname;
@@ -32,21 +32,21 @@ public class Member {
     private String email;
 
     @Column(nullable = false)
-    private String phoneNum;
+    private String phoneNumber;
 
     @Builder
-    public Member(String id, String email, String password, String username, String nickname, String phoneNum, String name) {
+    public Member(Long id, String email, String password, String username, String nickname, String phoneNumber) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.username = username;
         this.nickname = nickname;
-        this.phoneNum = phoneNum;
-        this.name = name;
+        this.phoneNumber = phoneNumber;
     }
 
     // 비밀번호 변경을 위한 메서드
     public void updatePassword(String newPassword) {
         this.password = newPassword;
     }
+
 }
