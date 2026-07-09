@@ -1,6 +1,7 @@
 package com.team1.appang.controller.auth;
 
 
+import com.team1.appang.dto.auth.EmailCheckRequest;
 import com.team1.appang.dto.auth.EmailExistResponse;
 import com.team1.appang.dto.auth.SignUpRequest;
 import com.team1.appang.dto.auth.SignUpResponse;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
  비밀번호 재설정은 이미 완성된 상태라 분리를 유지
  ========================================
  */
-@Validated //쿼리 파라미터를 검증하기 위해 추가
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor // 서비스 자동 주입을 위해 추가
@@ -34,12 +35,25 @@ public class AuthController {
     //이메일 중복 확인 API
     @GetMapping("/emails/exists") //경로에는 쿼리 파라미터를 적지 않음
     public ResponseEntity<EmailExistResponse> checkEmailExisits(
-            @RequestParam("email")
-            @NotBlank(message = "이메일을 입력해주세요.")
-            @Email(message = "올바른 이메일 형식이 아닙니다.")
-            String email) {
+            //파라미터 바인딩을 보장하기 위해 @ModelAttribute 사용
+            @Valid @ModelAttribute EmailCheckRequest request,
+            BindingResult bindingResult) {
+
+        //검증에서 오류가 발생했는지 확인
+        if(bindingResult.hasErrors()){
+            //발생한 에러를 꺼내옴
+            FieldError fieldError = bindingResult.getFieldError();
+            //필드에러가 아니라 글로벌에러일수도 있으니 삼항연산자로 한차례 검사
+             //오류 원인에 따른 메시지를 담는 변수
+            String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "잘못된 요청입니다.";
+
+            //응답 반환
+            return ResponseEntity.badRequest().body( EmailExistResponse.fail(errorMessage));
+        }
+
+
         //사용가능할때는 존재하지 않을때(false)이므로 그 역 값을 넣음
-        boolean isAvailable = !authService.isEmailExisis(email);
+        boolean isAvailable = !authService.isEmailExisis(request.email());
         String message = isAvailable ? "사용 가능한 이메일입니다." : "이미 사용 중인 이메일입니다.";
 
         return ResponseEntity.ok(EmailExistResponse.success(isAvailable, message));
