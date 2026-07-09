@@ -1,19 +1,20 @@
 package com.team1.appang.controller.auth;
 
 
+import com.team1.appang.dto.auth.EmailExistResponse;
 import com.team1.appang.dto.auth.SignUpRequest;
 import com.team1.appang.dto.auth.SignUpResponse;
 import com.team1.appang.service.auth.AuthService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 /*
 =========================================
@@ -23,12 +24,28 @@ import org.springframework.web.bind.annotation.RestController;
  비밀번호 재설정은 이미 완성된 상태라 분리를 유지
  ========================================
  */
+@Validated //쿼리 파라미터를 검증하기 위해 추가
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor // 서비스 자동 주입을 위해 추가
 public class AuthController {
     private final AuthService authService;
 
+    //이메일 중복 확인 API
+    @GetMapping("/emails/exists") //경로에는 쿼리 파라미터를 적지 않음
+    public ResponseEntity<EmailExistResponse> checkEmailExisits(
+            @RequestParam("email")
+            @NotBlank(message = "이메일을 입력해주세요.")
+            @Email(message = "올바른 이메일 형식이 아닙니다.")
+            String email) {
+        //사용가능할때는 존재하지 않을때(false)이므로 그 역 값을 넣음
+        boolean isAvailable = !authService.isEmailExisis(email);
+        String message = isAvailable ? "사용 가능한 이메일입니다." : "이미 사용 중인 이메일입니다.";
+
+        return ResponseEntity.ok(EmailExistResponse.success(isAvailable, message));
+    }
+
+    //회원가입 API
     @PostMapping("/signup")
     public ResponseEntity<SignUpResponse> signUp(
             //DTO 검증을 위해서 Valid를 붙임. 검증이 끝나면 회원가입 처리 로직이 수행된다.

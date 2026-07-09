@@ -27,6 +27,10 @@ import java.util.Map;
 @RequiredArgsConstructor //생성자 자동 생성
 public class AuthService {
     private final MemberRepository memberRepository;
+    //이메일 중복 검사, 검사후 값을 true/false로 반환
+    public boolean isEmailExisis(String email){
+        return memberRepository.existsByEmail(email);
+    }
 
     //회원가입 로직
     @Transactional //DB 값을 수정해야하므로
