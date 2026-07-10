@@ -1,0 +1,30 @@
+package com.team1.appang.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+/*
+'org.springframework.boot:spring-boot-starter-security'
+의존성 추가로 인해 로그인을 하지 않으면 접근이 차단되는 문제 발생
+해결하기 위해 해당 클래스 추가
+ */
+@Configuration //컴포넌트 스캔에 인식되기 위해 추가
+@EnableWebSecurity
+public class SecurityConfig {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                //CSRF 보호기능 차단
+                .csrf(csrf -> csrf.disable())
+                //"/api/auth"로 시작하는 모든 경로는 접근 가능
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()
+                        //그 외는 접근 차단. 이후 허가할 기능이 생기면 추가
+                        .anyRequest().authenticated()
+                );
+        return http.build();
+    }
+}
