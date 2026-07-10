@@ -17,12 +17,14 @@ public class CartItem {
     private int quantity;
     private boolean isSelected;
 
+    @Column(nullable = false)
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
     @JoinColumn(name = "member_id ")
     private Member member;
 
+
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "product_option_id ")
+    @JoinColumn(name = "product_option_id", nullable = false)
     private ProductOption productOption;
 
     @Builder

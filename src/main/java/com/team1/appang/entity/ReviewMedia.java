@@ -23,7 +23,7 @@ public class ReviewMedia {
     private int duration;
 
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "productReview_id")
+    @JoinColumn(name = "product_review_id", nullable = false)
     private ProductReview productReview;
 
     @Builder

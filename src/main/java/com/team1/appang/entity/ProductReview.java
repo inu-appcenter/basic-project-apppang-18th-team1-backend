@@ -24,12 +24,14 @@ public class ProductReview {
     @Column(nullable = false)
     private int helpfulCount;
 
-    @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "member_id ")
-    private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "product_id ")
+    @JoinColumn(name = "member_id")
+    private Member member;
+
+
+    @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @Builder

@@ -17,7 +17,7 @@ public class Product {
 
     private String brandName;
     private int discountRate;
-    private String unitPriceText;; //단위당 가격
+    private String unitPriceText; //단위당 가격
 
     @Lob
     private String detailImages; //상세 이미지
@@ -37,7 +37,7 @@ public class Product {
 
     //외래키. JPA 규칙에 맞춰 객체로 생성
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @Builder

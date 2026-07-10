@@ -23,8 +23,9 @@ public class Purchase {
     @Column(nullable = false)
     private int finalPaymentPrice;
 
+
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "member_id ")
+    @JoinColumn(name = "member_id",nullable = false)
     private Member member;
 
     @Builder

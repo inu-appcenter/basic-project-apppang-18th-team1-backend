@@ -9,25 +9,17 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Wishlist {
+public class ChatRoom {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private Long id;
 
 
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "product_id")
-    private Product product;
-
-    @Builder
-    public Wishlist(Member member, Product product){
+    @Builder public ChatRoom(Member member){
         this.member = member;
-        this.product = product;
     }
-
-
 }
