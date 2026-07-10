@@ -10,7 +10,6 @@ import org.w3c.dom.Text;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "product")
 public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id

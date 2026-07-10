@@ -9,29 +9,23 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CartItem {
+public class Wishlist {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private Long id;
-
-    private int quantity;
-    private boolean isSelected;
 
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
     @JoinColumn(name = "member_id ")
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "product_option_id ")
-    private ProductOption productOption;
+    @JoinColumn(name = "product_id ")
+    private Product product;
 
     @Builder
-    public CartItem(int quantity, boolean isSelected,
-                    Member member, ProductOption productOption){
-        this.quantity = quantity;
-        this.isSelected= isSelected;
-        this.member=member;
-        this.productOption = productOption;
+    public Wishlist(Member member, Product product){
+        this.member = member;
+        this.product = product;
     }
 
 

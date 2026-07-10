@@ -9,37 +9,36 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ProductOption {
+public class ProductReview {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private Long id;
 
     @Column(nullable = false)
-    private String optionName;
+    private int rating;
+
+    @Lob
+    @Column(nullable = false)
+    private String content;
 
     @Column(nullable = false)
-    private String optionValue;
+    private int helpfulCount;
 
-    @Column(nullable = false)
-    private int additionalPrice;
-
-    @Column(nullable = false)
-    private int stockQuantity;
-
-    private boolean isSoldOut;
+    @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
+    @JoinColumn(name = "member_id ")
+    private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
     @JoinColumn(name = "product_id ")
     private Product product;
 
     @Builder
-    public ProductOption(String optionName, String optionValue, int additionalPrice,
-                         int stockQuantity, boolean isSoldOut, Product product){
-        this.optionName = optionName;
-        this.optionValue = optionValue;
-        this.additionalPrice = additionalPrice;
-        this.stockQuantity = stockQuantity;
-        this.isSoldOut = isSoldOut;
+    public ProductReview(int rating, String content, int helpfulCount,
+                         Member member,Product product){
+        this.rating = rating;
+        this.content = content;
+        this.helpfulCount = helpfulCount;
+        this.member = member;
         this.product = product;
     }
 }
