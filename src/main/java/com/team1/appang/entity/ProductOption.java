@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "product")
+@Table(name = "ProductOption")
 public class ProductOption {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
@@ -34,11 +34,13 @@ public class ProductOption {
     private Product product;
 
     @Builder
-    public ProductOption(String optionName, String optionValue, int additionalPrice, int stockQuantity, boolean isSoldOut){
+    public ProductOption(String optionName, String optionValue, int additionalPrice,
+                         int stockQuantity, boolean isSoldOut, Product product){
         this.optionName = optionName;
         this.optionValue = optionValue;
         this.additionalPrice = additionalPrice;
         this.stockQuantity = stockQuantity;
         this.isSoldOut = isSoldOut;
+        this.product = product;
     }
 }
