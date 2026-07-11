@@ -1,18 +1,23 @@
 package com.team1.appang.service.auth;
 
+import com.team1.appang.dto.auth.LoginRequest;
+import com.team1.appang.dto.auth.LoginResponse;
 import com.team1.appang.dto.auth.SignUpRequest;
 import com.team1.appang.entity.Member;
 import com.team1.appang.repository.MemberRepository;
+import com.team1.appang.security.JwtTokenProvider;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /*
 =========================================
@@ -25,26 +30,52 @@ import java.util.Map;
 @Slf4j  //로그를 위해 추가
 @Service
 @RequiredArgsConstructor //생성자 자동 생성
+@Transactional //DB 값을 수정해야하므로
 public class AuthService {
     private final MemberRepository memberRepository;
+    private final JwtTokenProvider jwtTokenProvider; //jwt 사용 필요
+    private final PasswordEncoder passwordEncoder; //비밀번호 암호화 작업을 위함
+
+
     //이메일 중복 검사, 검사후 값을 true/false로 반환
-    public boolean isEmailExisis(String email){
+    public boolean isEmailExists(String email){
         return memberRepository.existsByEmail(email);
     }
 
+    //로그인 로직
+    public LoginResponse login(LoginRequest request){
+
+        //이메일로 사용자를 찾고 비밀번호를 검증함.
+        //이때 보안을 위해 메시지 내용은 동일한 내용으로 사용
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(()-> new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다"));
+
+        if (!passwordEncoder.matches(request.password(), member.getPassword())){
+            throw new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다");
+        }
+
+        //인증 성공시 토큰 발행
+        String accessToken = jwtTokenProvider.createAccessToken(member.getEmail());
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
+
+        //컨트롤러로 토큰과 메시지 반환
+        return new LoginResponse("로그인에 성공했습니다.", accessToken, refreshToken);
+    }
+
     //회원가입 로직
-    @Transactional //DB 값을 수정해야하므로
-    public Long singup(SignUpRequest request) {
+    public Long signup(SignUpRequest request) {
         //이메일 중복 검사 진행
         if (memberRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("이미 가입된 이메일입니다."); //중복 오류
         }
 
+        //비밀번호 암호화 추가
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
 
         //엔티티에 유저 정보를 담음
         Member member = Member.builder()
                 .email(request.getEmail())
-                .password(request.getPassword()) //일단은 암호화 없이 진행
+                .password(encodedPassword) //비밀번호 암호화 진행
                 .nickname(request.getNickname())
                 .username(request.getName())
                 .phoneNumber(request.getPhoneNumber())
