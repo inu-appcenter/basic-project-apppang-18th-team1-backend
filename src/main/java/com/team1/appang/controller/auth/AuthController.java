@@ -75,6 +75,26 @@ public class AuthController {
             }
 
     }
+
+    //로그아웃
+    @PostMapping("/logout")
+    public ResponseEntity<MessageResponse> logout(){
+        //유효시간을 0으로 만들어서 쿠키를 파기한다.
+        //일종의 덮어쓰기를 하는 것이기 때문에 옵션을 똑같이 적용해야함
+        ResponseCookie responseCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
+        MessageResponse messageResponse = new MessageResponse("로그아웃 되었습니다");
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .body(messageResponse);
+    }
+
     //이메일 중복 확인 API
     @GetMapping("/emails/exists") //경로에는 쿼리 파라미터를 적지 않음
     public ResponseEntity<EmailExistResponse> checkEmailExisits(
