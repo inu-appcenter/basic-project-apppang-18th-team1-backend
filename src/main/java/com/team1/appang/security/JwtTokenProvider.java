@@ -18,7 +18,7 @@ public class JwtTokenProvider {
     //토큰 sign에 사용할 비밀키
     private final SecretKey secretKey;
 
-    //토큰 유효시간
+    //토큰 유효 시간
     private final long accessTokenValidity = 3600000;//1시간
     private final long refreshTokenValidity = 1209600000; //2주
 
