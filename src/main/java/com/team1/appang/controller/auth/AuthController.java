@@ -33,6 +33,24 @@ public class AuthController {
     private final AuthService authService;
     private final JwtTokenProvider jwtTokenProvider; //JWT 토큰 의존성 추가
 
+    //이메일 찾기 API
+    @PostMapping("login/findId")
+    public ResponseEntity<FindEmailResponse> findEmail(
+            @Valid @RequestBody FindEmailRequest request,
+            BindingResult bindingResult){
+        if (bindingResult.hasErrors()) {
+            FieldError fieldError = bindingResult.getFieldError();
+            String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "잘못된 요청입니다.";
+            return ResponseEntity.badRequest().body(new FindEmailResponse(null, errorMessage));
+                    }
+            try {
+            FindEmailResponse response = authService.findEmail(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e){
+            return ResponseEntity.badRequest().body(new FindEmailResponse(null, e.getMessage()));
+        }
+    }
+
     //로그인 API
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login (

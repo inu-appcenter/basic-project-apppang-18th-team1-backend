@@ -1,8 +1,6 @@
 package com.team1.appang.service.auth;
 
-import com.team1.appang.dto.auth.LoginRequest;
-import com.team1.appang.dto.auth.LoginResponse;
-import com.team1.appang.dto.auth.SignUpRequest;
+import com.team1.appang.dto.auth.*;
 import com.team1.appang.entity.Member;
 import com.team1.appang.repository.MemberRepository;
 import com.team1.appang.security.JwtTokenProvider;
@@ -42,6 +40,23 @@ public class AuthService {
         return memberRepository.existsByEmail(email);
     }
 
+    //전화번호로 이메일 찾기 로직
+    public FindEmailResponse findEmail(FindEmailRequest request) {
+        //전화번호로 회원을 찾음
+        Member member = memberRepository.findByPhoneNumber(request.phoneNumber())
+                .orElseThrow(() -> new IllegalArgumentException("일치하는 회원 정보가 없습니다."));
+
+        //찾은회원과 이름이 동일한지 검증
+        if (!member.getName().equals(request.name())){
+            throw new IllegalArgumentException("일치하는 회원 정보가 없습니다.");
+        }
+
+        String email = member.getEmail();
+
+        return new FindEmailResponse(email, null);
+    }
+
+
     //로그인 로직
     public LoginResponse login(LoginRequest request){
 
@@ -77,7 +92,7 @@ public class AuthService {
                 .email(request.getEmail())
                 .password(encodedPassword) //비밀번호 암호화 진행
                 .nickname(request.getNickname())
-                .username(request.getName())
+                .name(request.getName())
                 .phoneNumber(request.getPhoneNumber())
                 .build();
 
