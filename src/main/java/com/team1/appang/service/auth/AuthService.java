@@ -34,6 +34,24 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider; //jwt 사용 필요
     private final PasswordEncoder passwordEncoder; //비밀번호 암호화 작업을 위함
 
+    //토큰 재발급 로직 추가
+    public TokenReissueResponse reissue (String refreshToken){
+        //쿠키가 없거나 토큰이 만료됐으면 예외를 던짐
+        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)){
+            throw new IllegalArgumentException("다시 로그인해주세요.");
+        }
+
+        //토큰이 유효하닫면 이메일을 꺼내 실제 회원이 존재하는지 DB에서 확인
+        String email = jwtTokenProvider.getEmail(refreshToken);
+        Member member = memberRepository.findByEmail(email)
+                //없다면 예외를 던짐
+                .orElseThrow(()-> new IllegalArgumentException("잘못된 접근입니다."));
+
+        //모두 통과한다면 뽑아낸 이메일로 새로운 토큰을 발급
+        String newAccessToken = jwtTokenProvider.createAccessToken(member.getEmail());
+        //메시지와 토큰을 담아 응답 반환
+        return new TokenReissueResponse("토큰이 재발급되었습니다.", newAccessToken);
+    }
 
     //이메일 중복 검사, 검사후 값을 true/false로 반환
     public boolean isEmailExists(String email){

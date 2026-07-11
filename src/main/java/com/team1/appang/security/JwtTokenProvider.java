@@ -2,6 +2,7 @@ package com.team1.appang.security;
 
 //JWT 토큰을 생성하는 클래스
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.Keys;
 
 import io.jsonwebtoken.Jwts;
@@ -54,5 +55,29 @@ public class JwtTokenProvider {
                 .expiration(validity) //토큰 만료 시간
                 .signWith(secretKey) //비밀키로 암호화 서명
                 .compact(); //String 형태로 토큰을 빌드
+    }
+
+    //토큰 유효성 검증 메서드
+    public boolean validateToken(String token) {
+        try{
+            //비밀키로 서명을 검증하면서 토큰을 파싱함
+
+            Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
+            return true;
+        }catch (JwtException | IllegalArgumentException e){
+            return false; //만약 서명이 틀리거나 만료되었다면 예외 발생으로 false반환
+        }
+    }
+
+    //토큰에서 이메일 추출
+    public String getEmail(String token){
+        //비밀키 기반 파서를 생성
+        return Jwts.parser().verifyWith(secretKey).build()
+                //토큰을 파싱해서 객체인 Claims을 얻음
+                .parseSignedClaims(token)
+                //꺼낸 Claims을 꺼냄
+                .getPayload()
+                //토큰 생성에 넣었던 sub(=이메일)을 반환함
+                .getSubject();
     }
 }

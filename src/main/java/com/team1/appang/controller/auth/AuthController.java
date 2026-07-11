@@ -33,17 +33,37 @@ public class AuthController {
     private final AuthService authService;
     private final JwtTokenProvider jwtTokenProvider; //JWT 토큰 의존성 추가
 
+    // 토큰 재발급 API
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenReissueResponse> refresh(
+            //쿠키에 담겨있는 refreshToken값을 자동으로 바인딩한다
+            //쿠키가 없어도 에러가 나지 않도록 required를 false로 설정한다.
+            @CookieValue(value = "refreshToken", required = false) String refreshToken){
+        try{
+            //서비스의 재발급 로직 호출
+            TokenReissueResponse response = authService.reissue(refreshToken);
+            return ResponseEntity.ok(response);
+        }catch (IllegalArgumentException e){
+            //실패시 401로 에러 메시지 반환
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new TokenReissueResponse(e.getMessage(), null));
+        }
+    }
+    
     //이메일 찾기 API
     @PostMapping("login/findId")
     public ResponseEntity<FindEmailResponse> findEmail(
             @Valid @RequestBody FindEmailRequest request,
             BindingResult bindingResult){
+        //오류가 있었다면 이를 잡아 반환
         if (bindingResult.hasErrors()) {
             FieldError fieldError = bindingResult.getFieldError();
             String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "잘못된 요청입니다.";
             return ResponseEntity.badRequest().body(new FindEmailResponse(null, errorMessage));
-                    }
-            try {
+        }
+        //들여쓰기 오류 수정
+        //try-catch 문을 이용해 성공과 실패를 구분
+        try {
             FindEmailResponse response = authService.findEmail(request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e){
