@@ -1,11 +1,6 @@
 spring:
   application:
     name: appang
-  datasource:
-    url: jdbc:mysql://db:3306/appang
-    username: appang
-    password: appangpass
-    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update

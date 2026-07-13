@@ -18,6 +18,10 @@ services:
     container_name: appang-backend
     ports:
       - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_KEY}
     depends_on:
       - db
 volumes:
