@@ -4,6 +4,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /*
@@ -12,13 +15,26 @@ import org.springframework.security.web.SecurityFilterChain;
 해결하기 위해 해당 클래스 추가
  */
 @Configuration //컴포넌트 스캔에 인식되기 위해 추가
-@EnableWebSecurity
+@EnableWebSecurity //스프링 시큐리티 설정을 활성화함
 public class SecurityConfig {
+
+    //비밀번호 암호화
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                //CSRF 보호기능 차단
+                //CSRF 보호기능, 로그인창 폼, HTTP 기본 인증 비활성화
                 .csrf(csrf -> csrf.disable())
+                .formLogin(form->form.disable())
+                .httpBasic(basic -> basic.disable())
+                
+                //서버측에 세션을 저장하거나 유지하지 않도록 설정함
+                .sessionManagement(session -> 
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 //"/api/auth"로 시작하는 모든 경로는 접근 가능
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
