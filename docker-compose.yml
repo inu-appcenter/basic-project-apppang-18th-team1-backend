@@ -13,6 +13,12 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - appang-data:/var/lib/mysql
-
+  backend:
+    build: .
+    container_name: appang-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
 volumes:
   appang-data:

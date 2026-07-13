@@ -2,7 +2,7 @@ spring:
   application:
     name: appang
   datasource:
-    url: jdbc:mysql://localhost:3307/appang
+    url: jdbc:mysql://db:3306/appang
     username: appang
     password: appangpass
     driver-class-name: com.mysql.cj.jdbc.Driver
