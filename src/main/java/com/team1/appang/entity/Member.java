@@ -18,7 +18,7 @@ public class Member {
 
     //username은 겹칠 수 있으므로 unique지정 안함
     @Column(nullable = false)
-    private String username;
+    private String name;
 
     @Column(nullable = false)
     private String password;
@@ -34,10 +34,10 @@ public class Member {
     private String phoneNumber;
 
     @Builder
-    public Member(String email, String password, String username, String nickname, String phoneNumber) {
+    public Member(String email, String password, String name, String nickname, String phoneNumber) {
         this.email = email;
         this.password = password;
-        this.username = username;
+        this.name = name;
         this.nickname = nickname;
         this.phoneNumber = phoneNumber;
     }
