@@ -47,6 +47,10 @@ jobs:
 
         - name: Gradle 빌드
           run: ./gradlew build
+          env:
+            SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+            SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
         - name: 테스트 리포트 업로드 (실패 시)
           if: failure()
           uses: actions/upload-artifact@v4
