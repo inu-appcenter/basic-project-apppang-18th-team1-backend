@@ -37,9 +37,9 @@ jobs:
           run: chmod +x ./gradlew
 
         - name: Gradle 빌드
-          run: ./gradlew build
+          run: ./gradlew build --stacktrace
           env:
-           SPRING_PROFILES_ACTIVE: local
+           SPRING_PROFILES  _ACTIVE: local
 
         - name: Docker Hub 로그인
           uses: docker/login-action@v3
