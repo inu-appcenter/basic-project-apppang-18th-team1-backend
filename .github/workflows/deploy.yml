@@ -36,6 +36,15 @@ jobs:
         - name: Gradle 실행 권한 부여
           run: chmod +x ./gradlew
 
+        - name: MySQL 연결 확인
+          run: |
+            for i in {1..15}; do
+              mysqladmin ping -h 127.0.0.1 -P 3307 -u appang -pappangpass --silent && echo "MySQL 준비 완료!" && break
+              echo "MySQL 대기 중... ($i/15)"
+              sleep 3
+            done
+            
+
         - name: Gradle 빌드
           run: ./gradlew build --stacktrace
           env:
