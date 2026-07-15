@@ -1,0 +1,6 @@
+name: Deploy Appang Backend
+
+on:
+  push:
+    branches:
+      - main
