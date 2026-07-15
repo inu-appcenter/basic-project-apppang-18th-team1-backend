@@ -46,7 +46,7 @@ jobs:
             
 
         - name: Gradle 빌드
-          run: ./gradlew build -Dspring.profiles.active=local
+          run: ./gradlew build
         - name: 테스트 리포트 업로드 (실패 시)
           if: failure()
           uses: actions/upload-artifact@v4
