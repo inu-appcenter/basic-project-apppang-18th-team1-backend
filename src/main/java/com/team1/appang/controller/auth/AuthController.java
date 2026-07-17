@@ -73,7 +73,7 @@ public class AuthController {
 
     //로그인 API
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login (
+    public ResponseEntity<?> login (
             //DTO 검증을 위해서 Valid를 붙임. 검증이 끝나면 회원가입 처리 로직이 수행된다.
             //오류 원인은 bindingResult에 자동으로 담긴다
             @Valid @RequestBody LoginRequest request,
@@ -95,7 +95,7 @@ public class AuthController {
                 // 토큰을 담은 쿠키를 생성
                 ResponseCookie responseCookie = ResponseCookie.from("refreshToken", response.refreshToken())
                         .httpOnly(true) //XSS공격을 차단
-                        .secure(false) //HTTPS 통신에서만 쿠키가 전송되도록 함
+                        .secure(false) //HTTPS 통신에서만 쿠키를 전송할지 여부를 결정. 현재는 로컬 테스트를 위해 false로 설정함
                         .path("/") //모든 경로에서 쿠키 사용 가능
                         .maxAge(jwtTokenProvider.getRefreshTokenValidityInMilliseconds() / 1000) //쿠키 유효기간은 2주로 설정
                         .sameSite("Strict")
