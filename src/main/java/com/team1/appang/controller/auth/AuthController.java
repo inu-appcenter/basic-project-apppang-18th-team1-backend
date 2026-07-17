@@ -109,7 +109,7 @@ public class AuthController {
             } catch (IllegalArgumentException e){
                 //401번으로 오류메시지를 보낸다.
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new LoginResponse(e.getMessage(), null, null));
+                        .body(new MessageResponse(e.getMessage())); //실패응답은 성공과 다른 DTO를 사용해 전송하도록 수정
             }
 
     }
