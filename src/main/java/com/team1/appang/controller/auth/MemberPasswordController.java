@@ -26,7 +26,6 @@ public class MemberPasswordController {
     @PatchMapping("/reset")
     public ResponseEntity<MessageResponse> resetPassword(@RequestBody ResetPasswordRequest request){
         String resultMessage = memberPasswordService.resetPassword(request);
-
         //200, 성공
         if (resultMessage.contains("비밀번호가 재설정 되었습니다."))
             return ResponseEntity.ok(new MessageResponse(resultMessage));

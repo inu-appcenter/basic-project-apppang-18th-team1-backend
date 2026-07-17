@@ -23,7 +23,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor //생성자 자동 생성
 public class MemberPasswordService {
-
+    //비밀번호 조건 확인을 위한 정규식
+    private static final String PASSWORD_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$";
     private final MemberRepository memberRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private final PasswordEncoder passwordEncoder;
@@ -37,8 +38,8 @@ public class MemberPasswordService {
 
     @Transactional //DB 값을 수정해야하므로
     public String resetPassword(ResetPasswordRequest request) {
-        if (request.getNewPassword().length() < 8){
-            return("비밀번호는 최소 8자리 이상이어야 합니다.");
+        if (request.getNewPassword().matches(PASSWORD_PATTERN)){
+            return("비밀번호는 8자 이상이며 영문과 숫자를 포함해야 합니다.");
         }
 
         if (!request.getNewPassword().equals(request.getPasswordCheck())){

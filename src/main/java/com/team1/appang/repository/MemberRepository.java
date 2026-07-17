@@ -7,7 +7,7 @@ import java.util.Optional;
 
 //JpaRepository를 상속
 // <테이블 명, PK 타입>
-public interface MemberRepository extends JpaRepository<Member, String> {
+public interface MemberRepository extends JpaRepository<Member, Long> {
     //비밀번호 재변경등을 위해 멤버 데이터를 가져옴
     Optional<Member> findByEmail(String email);
 
