@@ -19,7 +19,7 @@ public class CartItem {
 
 
     @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
-    @JoinColumn(name = "member_id ")
+    @JoinColumn(name = "member_id")
     private Member member;
 
 

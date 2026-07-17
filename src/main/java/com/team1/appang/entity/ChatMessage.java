@@ -14,8 +14,14 @@ public class ChatMessage {
     @Id
     private Long id;
 
+    //Enum 선언  타입: 봇, 유저
+    public enum SenderType {
+        BOT, USER
+    }
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String senderType; //타입, 봇/유저
+    private SenderType senderType;
 
     @Lob //TEXT 타입과 매핑하기 위함
     @Column(nullable = false)
@@ -27,7 +33,7 @@ public class ChatMessage {
     private ChatRoom chatRoom;
 
     @Builder
-    public ChatMessage(String senderType, String messageText, ChatRoom chatRoom){
+    public ChatMessage(SenderType senderType, String messageText, ChatRoom chatRoom){
         this.senderType = senderType;
         this.messageText = messageText;
         this.chatRoom =chatRoom;
