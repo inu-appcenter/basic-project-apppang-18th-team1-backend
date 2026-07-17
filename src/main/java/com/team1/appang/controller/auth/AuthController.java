@@ -51,7 +51,7 @@ public class AuthController {
     }
     
     //이메일 찾기 API
-    @PostMapping("login/findId")
+    @PostMapping("login/findEmail")
     public ResponseEntity<FindEmailResponse> findEmail(
             @Valid @RequestBody FindEmailRequest request,
             BindingResult bindingResult){
