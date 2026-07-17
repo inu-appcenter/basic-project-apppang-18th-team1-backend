@@ -15,7 +15,6 @@ public class Product {
     @Id
     private Long id;
 
-    private String brandName;
     private int discountRate;
     private String unitPriceText; //단위당 가격
 
@@ -40,10 +39,14 @@ public class Product {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_id", nullable = false)
+    private Brand brand;
+
     @Builder
-    public Product(String brandName, int discountRate, String unitPriceText, String detailImages,
+    public Product(int discountRate, String unitPriceText, String detailImages,
                    String name, int originPrice, int salePrice, String mainImageUrl, Category category) {
-        this.brandName = brandName;
+
         this.discountRate = discountRate;
         this.unitPriceText = unitPriceText;
         this.detailImages = detailImages;
