@@ -116,7 +116,14 @@ public class AuthController {
 
     //로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<MessageResponse> logout(){
+    public ResponseEntity<MessageResponse> logout(
+            //쿠키에서 refreshToken을 꺼내옴. 없을 수도 있으니 required=false
+            @CookieValue(value = "refreshToken", required = false) String refreshToken){
+
+        //추가: 서버에 저장된 refreshToken 자체를 무효화 (Redis에서 삭제)
+        //-> 이후 이 토큰으로는 /refresh 재발급이 불가능해짐
+        authService.logout(refreshToken);
+
         //유효시간을 0으로 만들어서 쿠키를 파기한다.
         //일종의 덮어쓰기를 하는 것이기 때문에 옵션을 똑같이 적용해야함
         ResponseCookie responseCookie = ResponseCookie.from("refreshToken", "")

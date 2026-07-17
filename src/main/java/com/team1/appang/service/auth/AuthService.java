@@ -4,6 +4,7 @@ import com.team1.appang.dto.auth.*;
 import com.team1.appang.entity.Member;
 import com.team1.appang.repository.MemberRepository;
 import com.team1.appang.security.JwtTokenProvider;
+import com.team1.appang.security.RefreshTokenStore; //로그아웃 시 refreshToken을 무효화하기 위해 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,7 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final JwtTokenProvider jwtTokenProvider; //jwt 사용 필요
     private final PasswordEncoder passwordEncoder; // 비밀번호 암호화 작업을 위함
+    private final RefreshTokenStore refreshTokenStore; //로그아웃 시 서버 측에서 refreshToken을 무효화하기 위해 추가
 
 
     //토큰 재발급 로직
@@ -48,6 +50,14 @@ public class AuthService {
         Member member = memberRepository.findByEmail(email)
                 //없다면 예외를 던짐
                 .orElseThrow(()-> new IllegalArgumentException("잘못된 접근입니다."));
+
+        //추가: Redis에 저장된 refreshToken과 일치하는지 확인
+        //로그아웃 되었거나 서버가 발급하지 않은 토큰이라면 여기서 걸러짐
+        //-> stateless JWT의 한계(로그아웃해도 토큰 자체는 만료 전까지 유효한 문제)를 보완하는 부분
+        if (!refreshTokenStore.isValid(email, refreshToken)) {
+            throw new IllegalArgumentException("만료되었거나 로그아웃된 토큰입니다.");
+        }
+
         //모두 통과한다면 뽑아낸 이메일로 새로운 토큰을 발급
         String newAccessToken = jwtTokenProvider.createAccessToken(member.getEmail());
         //메시지와 토큰을 담아 응답 반환
@@ -86,8 +96,27 @@ public class AuthService {
         //인증 성공시 토큰 발행
         String accessToken = jwtTokenProvider.createAccessToken(member.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
+
+        //추가: 발급한 refreshToken을 Redis에 저장 (로그아웃 시 무효화하기 위한 기준값)
+        //만료시간은 refreshToken 자체의 유효기간과 동일하게 맞춤
+        refreshTokenStore.save(member.getEmail(), refreshToken,
+                jwtTokenProvider.getRefreshTokenValidityInMilliseconds());
+
         //컨트롤러로 토큰과 메시지 반환
         return new LoginResponse("로그인에 성공했습니다.", accessToken, refreshToken);
+    }
+
+    //로그아웃 로직
+    //추가: stateless JWT는 로그아웃해도 토큰 자체가 만료 전까지 유효하다는 한계가 있어
+    //Redis에 저장해둔 refreshToken을 지워서 이후 재발급(reissue)이 불가능하도록 처리
+    public void logout(String refreshToken) {
+        //쿠키가 없거나 이미 유효하지 않은 토큰이면 지울 대상이 없으므로 그냥 종료
+        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+            return;
+        }
+        String email = jwtTokenProvider.getEmail(refreshToken);
+        //Redis에서 해당 회원의 refreshToken 삭제
+        refreshTokenStore.delete(email);
     }
 
     //회원가입 로직

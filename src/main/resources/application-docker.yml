@@ -4,3 +4,6 @@ spring:
     username: appang
     password: appangpass
     driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: redis
