@@ -178,7 +178,7 @@ public class AuthController {
             String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "잘못된 요청입니다.";
 
             //응답 반환
-            return ResponseEntity.badRequest().body(SignUpResponse.fail(errorField,errorMessage));
+            return ResponseEntity.badRequest().body(SignUpResponse.fail(errorMessage,errorField)); //순서 오류 수정
         }
 
         try {
