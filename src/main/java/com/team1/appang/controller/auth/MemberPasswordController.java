@@ -35,7 +35,7 @@ public class MemberPasswordController {
         if (resultMessage.contains("존재하지 않는 회원입니다."))
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(resultMessage));
 
-        // 401 토큰 오류 (Supabase 검증 실패)
+        // 401 토큰 오류 (supabase 검증 실패)
         if (resultMessage.contains("만료되거나 유효하지 않은 요청입니다.")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(resultMessage));
         }

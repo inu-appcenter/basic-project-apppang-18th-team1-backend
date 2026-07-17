@@ -10,7 +10,7 @@ spring:
         format_sql: true
 
 jwt:
-  secret: c3ByaW5nLWJvb3Qtand0LXNlY3JldC1rZXktZXhhbXBsZS1mb3ItYXBwYW5nLTIwMjY=
+  secret: ${JWT_SECRET}
 
 supabase:
   url: ${SUPABASE_URL}

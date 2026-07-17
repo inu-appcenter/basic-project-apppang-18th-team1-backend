@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,6 +26,7 @@ public class MemberPasswordService {
 
     private final MemberRepository memberRepository;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -55,7 +57,8 @@ public class MemberPasswordService {
 
         //위 조건을 모두 통과한다면 비밀번호 변경을 실행
         Member member = memberOpt.get();
-        member.updatePassword(request.getNewPassword());
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        member.updatePassword(encodedPassword);
 
         return("비밀번호가 재설정 되었습니다.");
     }
