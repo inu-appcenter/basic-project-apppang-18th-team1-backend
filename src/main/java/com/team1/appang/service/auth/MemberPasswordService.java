@@ -2,6 +2,9 @@ package com.team1.appang.service.auth;
 
 import com.team1.appang.dto.auth.ResetPasswordRequest;
 import com.team1.appang.entity.Member;
+import com.team1.appang.exception.InvalidPasswordFormatException;
+import com.team1.appang.exception.InvalidTokenException;
+import com.team1.appang.exception.PasswordMismatchException;
 import com.team1.appang.repository.MemberRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -38,17 +41,17 @@ public class MemberPasswordService {
     //트랜잭션 없는 바깥 메서드. DB가 불필요한 부분까지만 먼저 처리한다.
     public String resetPassword(ResetPasswordRequest request) {
         if (request.getNewPassword().matches(PASSWORD_PATTERN)) {
-            return ("비밀번호는 8자 이상이며 영문과 숫자를 포함해야 합니다.");
+            throw new InvalidPasswordFormatException("비밀번호는 8자 이상이며 영문과 숫자를 포함해야 합니다.");
         }
 
         if (!request.getNewPassword().equals(request.getPasswordCheck())) {
-            return ("비밀번호가 일치하지 않습니다.");
+            throw new PasswordMismatchException("비밀번호가 일치하지 않습니다.");
         }
 
         //DB조회보다 Supabase 토큰을 먼저 검증한다. (외부 API 호출이기 때문에 트랜잭션에 포함 X)
         boolean isTokenValid = verifySupabaseToken(request.getSupabaseToken(), request.getEmail());
         if (!isTokenValid) {
-            return "만료되거나 유효하지 않은 요청입니다.";
+            throw new InvalidTokenException("만료되거나 유효하지 않은 요청입니다.");
         }
 
         //트랜잭션이 필요한 부분을 별도의 메서드로 만들고, 이를 호출함

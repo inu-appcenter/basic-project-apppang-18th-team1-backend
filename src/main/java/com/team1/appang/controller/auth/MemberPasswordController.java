@@ -7,6 +7,10 @@ MemberPasswordService를 사용한다
 
 import com.team1.appang.dto.auth.MessageResponse;
 import com.team1.appang.dto.auth.ResetPasswordRequest;
+import com.team1.appang.exception.InvalidPasswordFormatException;
+import com.team1.appang.exception.InvalidTokenException;
+import com.team1.appang.exception.MemberNotFoundException;
+import com.team1.appang.exception.PasswordMismatchException;
 import com.team1.appang.service.auth.MemberPasswordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,24 +29,22 @@ public class MemberPasswordController {
     //사용자가 보낸 Request를 받기 위해 @RequestBody 사용
     @PatchMapping("/reset")
     public ResponseEntity<MessageResponse> resetPassword(@RequestBody ResetPasswordRequest request){
-        String resultMessage = memberPasswordService.resetPassword(request);
-        //200, 성공
-        if (resultMessage.contains("비밀번호가 재설정 되었습니다."))
-            return ResponseEntity.ok(new MessageResponse(resultMessage));
+        try {
+            memberPasswordService.resetPassword(request);
+            //예외 없이 끝까지 통과했다면 성공. 성공 메시지는 여기 Controller가 결정
+            return ResponseEntity.ok(new MessageResponse("비밀번호가 재설정 되었습니다."));
 
-        //404, 회원이 존재하지 않음
-        if (resultMessage.contains("존재하지 않는 회원입니다."))
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(resultMessage));
+        } catch (InvalidPasswordFormatException | PasswordMismatchException e) {
+            //400, 요청 형식 자체가 잘못된 경우
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
 
-        // 401 토큰 오류 (supabase 검증 실패)
-        if (resultMessage.contains("만료되거나 유효하지 않은 요청입니다.")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(resultMessage));
+        } catch (MemberNotFoundException e) {
+            //404, 회원이 존재하지 않음
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+
+        } catch (InvalidTokenException e) {
+            //401, 토큰 오류 (Supabase 검증 실패)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(e.getMessage()));
         }
-
-        //나머지는 400 에러로 처리
-        return ResponseEntity.badRequest().body(new MessageResponse(resultMessage));
     }
-
-
-
 }
