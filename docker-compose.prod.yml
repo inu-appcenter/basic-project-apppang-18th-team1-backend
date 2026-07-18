@@ -29,7 +29,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_ANON_KEY: ${SUPABASE_KEY}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     depends_on:
       - db
       - redis
