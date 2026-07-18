@@ -28,19 +28,32 @@ public class ProductOption {
 
     private boolean isSoldOut;
 
+    //Enum을 문자열 그대로 저장, 숫자는 순서 바뀔시 오류 가능성이 높음
+    @Enumerated(EnumType.STRING)
+    private ShippingType shippingType;
 
-    @ManyToOne(fetch = FetchType.LAZY) // 일대다 관계이므로
+    //이 옵션 선택 시 절약되는 금액
+    private int saveAmount;
+
+    //인기 옵션 여부 (뱃지 표시용)
+    private boolean isPopular;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @Builder
     public ProductOption(String optionName, String optionValue, int additionalPrice,
-                         int stockQuantity, boolean isSoldOut, Product product){
+                         int stockQuantity, boolean isSoldOut, ShippingType shippingType,
+                         int saveAmount, boolean isPopular, Product product){
         this.optionName = optionName;
         this.optionValue = optionValue;
         this.additionalPrice = additionalPrice;
         this.stockQuantity = stockQuantity;
         this.isSoldOut = isSoldOut;
+        this.shippingType = shippingType;
+        this.saveAmount = saveAmount;
+        this.isPopular = isPopular;
         this.product = product;
     }
 }
