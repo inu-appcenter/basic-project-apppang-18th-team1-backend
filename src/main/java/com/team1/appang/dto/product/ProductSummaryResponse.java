@@ -15,7 +15,7 @@ public record ProductSummaryResponse(
     public static ProductSummaryResponse from(com.team1.appang.entity.Product product) {
         return new ProductSummaryResponse(
                 product.getId(),
-                product.getBrandName(),
+                product.getBrand().getName(),
                 product.getName(),
                 product.getOriginPrice(),
                 product.getDiscountRate(),

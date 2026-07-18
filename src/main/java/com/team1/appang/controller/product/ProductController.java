@@ -1,22 +1,29 @@
 package com.team1.appang.controller.product;
 
 import com.team1.appang.dto.auth.MessageResponse;
+import com.team1.appang.dto.product.ProductDetailResponse;
 import com.team1.appang.dto.product.ProductListResponse;
 import com.team1.appang.dto.product.ProductSortType;
+import com.team1.appang.entity.Member;
+import com.team1.appang.exception.ProductNotFoundException;
+import com.team1.appang.repository.MemberRepository;
+import com.team1.appang.service.product.ProductDetailService;
 import com.team1.appang.service.product.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
 public class ProductController {
-     //서비스 연결
+    //서비스 연결
     private final ProductService productService;
+    private final ProductDetailService productDetailService; //추가: 상세 조회 서비스
+    private final MemberRepository memberRepository; //추가: 로그인한 회원의 email로 memberId를 조회하기 위함
 
     //상품 목록 조회 API
     //전체 조회 시 카테고리는 null이 됨
@@ -40,5 +47,32 @@ public class ProductController {
         ProductSortType sortType = ProductSortType.from(sort);
         ProductListResponse response = productService.getProducts(category, sortType, page, size);
         return ResponseEntity.ok(response);
+    }
+
+    //상품 상세 조회 API
+    //로그인 상태면 isWishlist를 실제 값으로, 비로그인이면 false로 응답
+    @GetMapping("/{productId}")
+    public ResponseEntity<?> getProductDetail(@PathVariable Long productId) {
+        try {
+            Long memberId = getCurrentMemberId(); //로그인 안 했으면 null 반환
+            ProductDetailResponse response = productDetailService.getProductDetail(productId, memberId);
+            return ResponseEntity.ok(response);
+        } catch (ProductNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    //SecurityContext에서 현재 로그인한 회원의 id를 꺼내는 헬퍼 메서드
+    //JwtFilter가 인증 정보를 세팅해뒀다면 이메일을 꺼내 memberId로 변환, 없으면 null
+    private Long getCurrentMemberId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return null;
+        }
+        String email = (String) authentication.getPrincipal();
+        return memberRepository.findByEmail(email)
+                .map(Member::getId)
+                .orElse(null);
     }
 }

@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-//상품의 브랜드 정보를 담는 엔티티
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -15,7 +14,7 @@ public class Brand {
     @Id
     private Long id;
 
-    //브랜드명은 하나만 존재해야 하므로 unique 지정
+    //브랜드명은 하나만 존재
     @Column(nullable = false, unique = true)
     private String name;
 
