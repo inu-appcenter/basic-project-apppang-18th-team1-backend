@@ -16,13 +16,18 @@ services:
   backend:
     image: cshoney/appang-backend:latest
     container_name: appang-backend
-    ports:
-      - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: ${SUPABASE_KEY}
     depends_on:
       - db
+  nginx:
+    image: cshoney/appang-frontend:latest
+    container_name: appang-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 volumes:
   appang-data:
