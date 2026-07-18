@@ -30,8 +30,6 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: ${SUPABASE_KEY}
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       - db
       - redis
