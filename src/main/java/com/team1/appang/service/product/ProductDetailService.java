@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 //상품 상세 보기 서비스
-//여러 검증이 필요해 분리시킴
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
