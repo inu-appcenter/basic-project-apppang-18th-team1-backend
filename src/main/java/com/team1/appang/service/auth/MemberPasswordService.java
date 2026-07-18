@@ -1,17 +1,15 @@
 package com.team1.appang.service.auth;
 
 import com.team1.appang.dto.auth.ResetPasswordRequest;
-import com.team1.appang.entity.Member;
-import com.team1.appang.repository.MemberRepository;
-import jakarta.transaction.Transactional;
+import com.team1.appang.exception.InvalidPasswordFormatException;
+import com.team1.appang.exception.InvalidTokenException;
+import com.team1.appang.exception.PasswordMismatchException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.util.Map;
-import java.util.Optional;
 
 /*
 ==================================
@@ -22,9 +20,10 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor //생성자 자동 생성
 public class MemberPasswordService {
-
-    private final MemberRepository memberRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    //비밀번호 조건 확인을 위한 정규식
+    private static final String PASSWORD_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$";
+    private final RestClient restClient; //Bean으로 등록된 RestClient를 주입받음
+    private final MemberPasswordUpdater memberPasswordUpdater; //추가: DB 업데이트를 전담하는 별도 빈
 
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -33,61 +32,46 @@ public class MemberPasswordService {
     private String supabaseAnonKey;
 
 
-    @Transactional //DB 값을 수정해야하므로
+    //트랜잭션 없는 바깥 메서드. DB가 불필요한 부분까지만 먼저 처리한다.
     public String resetPassword(ResetPasswordRequest request) {
-        if (request.getNewPassword().length() < 8){
-            return("비밀번호는 최소 8자리 이상이어야 합니다.");
+        if (!request.getNewPassword().matches(PASSWORD_PATTERN)) {
+            throw new InvalidPasswordFormatException("비밀번호는 8자 이상이며 영문과 숫자를 포함해야 합니다.");
         }
 
-        if (!request.getNewPassword().equals(request.getPasswordCheck())){
-            return("비밀번호가 일치하지 않습니다.");
+        if (!request.getNewPassword().equals(request.getPasswordCheck())) {
+            throw new PasswordMismatchException("비밀번호가 일치하지 않습니다.");
         }
 
-        Optional<Member> memberOpt = memberRepository.findByEmail(request.getEmail());
-        if(memberOpt.isEmpty()){
-            return("존재하지 않는 회원입니다.");
-        }
+        //DB조회보다 Supabase 토큰을 먼저 검증한다. (외부 API 호출이기 때문에 트랜잭션에 포함 X)
 
         boolean isTokenValid = verifySupabaseToken(request.getSupabaseToken(), request.getEmail());
         if (!isTokenValid) {
-            return "만료되거나 유효하지 않은 요청입니다.";
+            throw new InvalidTokenException("만료되거나 유효하지 않은 요청입니다.");
         }
 
-        //위 조건을 모두 통과한다면 비밀번호 변경을 실행
-        Member member = memberOpt.get();
-        member.updatePassword(request.getNewPassword());
-
-        return("비밀번호가 재설정 되었습니다.");
+        //다른 빈을 통해 호출하므로 진짜 프록시를 거쳐 @Transactional이 정상 작동함
+        return memberPasswordUpdater.updatePassword(request);
     }
 
     //Supabase Auth API를 호출하여 프론트가 보낸 토큰을 검증하는 메서드
+    @SuppressWarnings("unchecked")
     private boolean verifySupabaseToken(String token, String requestEmail){
         try{
             String url = supabaseUrl + "/auth/v1/user";
 
-            // Http 요청 헤더 구성
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
-            headers.set("apikey", supabaseAnonKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            Map<String, Object> body = restClient.get()
+                    .uri(url)
+                    .header("Authorization", "Bearer " + token)
+                    .header("apikey", supabaseAnonKey)
+                    .retrieve()
+                    .body(Map.class);
 
-            ResponseEntity<Map> responseEntity = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    entity,
-                    Map.class
-            );
-
-            if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.getBody() != null) {
-                Map<String, Object> body = responseEntity.getBody();
-                if (body.containsKey("email")) {
-                    String tokenEmail = (String) body.get("email");
-                    return tokenEmail.equalsIgnoreCase(requestEmail);
-                }
+            if (body != null && body.containsKey("email")) {
+                String tokenEmail = (String) body.get("email");
+                return tokenEmail.equalsIgnoreCase(requestEmail);
             }
 
-        }catch (Exception e) { //서버 오류 또는 만료된 토큰
+        }catch (Exception e) {
             return false;
         }
         return false;

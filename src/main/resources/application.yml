@@ -3,14 +3,14 @@ spring:
     name: appang
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
 
 jwt:
-  secret: c3ByaW5nLWJvb3Qtand0LXNlY3JldC1rZXktZXhhbXBsZS1mb3ItYXBwYW5nLTIwMjY=
+  secret: ${JWT_SECRET}
 
 supabase:
   url: ${SUPABASE_URL}
