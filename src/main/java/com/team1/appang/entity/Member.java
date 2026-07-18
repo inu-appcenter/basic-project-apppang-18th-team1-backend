@@ -30,7 +30,8 @@ public class Member {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    //전화번호 하나당 하나의 계정만 생성가능
+    @Column(nullable = false, unique = true)
     private String phoneNumber;
 
     @Builder

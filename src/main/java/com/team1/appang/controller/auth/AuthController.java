@@ -51,7 +51,7 @@ public class AuthController {
     }
     
     //이메일 찾기 API
-    @PostMapping("login/findId")
+    @PostMapping("login/findEmail")
     public ResponseEntity<FindEmailResponse> findEmail(
             @Valid @RequestBody FindEmailRequest request,
             BindingResult bindingResult){
@@ -73,7 +73,7 @@ public class AuthController {
 
     //로그인 API
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login (
+    public ResponseEntity<?> login (
             //DTO 검증을 위해서 Valid를 붙임. 검증이 끝나면 회원가입 처리 로직이 수행된다.
             //오류 원인은 bindingResult에 자동으로 담긴다
             @Valid @RequestBody LoginRequest request,
@@ -95,7 +95,7 @@ public class AuthController {
                 // 토큰을 담은 쿠키를 생성
                 ResponseCookie responseCookie = ResponseCookie.from("refreshToken", response.refreshToken())
                         .httpOnly(true) //XSS공격을 차단
-                        .secure(false) //HTTPS 통신에서만 쿠키가 전송되도록 함
+                        .secure(false) //HTTPS 통신에서만 쿠키를 전송할지 여부를 결정. 현재는 로컬 테스트를 위해 false로 설정함
                         .path("/") //모든 경로에서 쿠키 사용 가능
                         .maxAge(jwtTokenProvider.getRefreshTokenValidityInMilliseconds() / 1000) //쿠키 유효기간은 2주로 설정
                         .sameSite("Strict")
@@ -109,14 +109,21 @@ public class AuthController {
             } catch (IllegalArgumentException e){
                 //401번으로 오류메시지를 보낸다.
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new LoginResponse(e.getMessage(), null, null));
+                        .body(new MessageResponse(e.getMessage())); //실패응답은 성공과 다른 DTO를 사용해 전송하도록 수정
             }
 
     }
 
     //로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<MessageResponse> logout(){
+    public ResponseEntity<MessageResponse> logout(
+            //쿠키에서 refreshToken을 꺼내옴. 없을 수도 있으니 required=false
+            @CookieValue(value = "refreshToken", required = false) String refreshToken){
+
+        //추가: 서버에 저장된 refreshToken 자체를 무효화 (Redis에서 삭제)
+        //-> 이후 이 토큰으로는 /refresh 재발급이 불가능해짐
+        authService.logout(refreshToken);
+
         //유효시간을 0으로 만들어서 쿠키를 파기한다.
         //일종의 덮어쓰기를 하는 것이기 때문에 옵션을 똑같이 적용해야함
         ResponseCookie responseCookie = ResponseCookie.from("refreshToken", "")
@@ -178,7 +185,7 @@ public class AuthController {
             String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "잘못된 요청입니다.";
 
             //응답 반환
-            return ResponseEntity.badRequest().body(SignUpResponse.fail(errorField,errorMessage));
+            return ResponseEntity.badRequest().body(SignUpResponse.fail(errorMessage,errorField)); //순서 오류 수정
         }
 
         try {
