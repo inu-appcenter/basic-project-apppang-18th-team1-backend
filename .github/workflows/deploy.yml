@@ -50,6 +50,7 @@ jobs:
           env:
             SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
             SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+            JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
         - name: 테스트 리포트 업로드 (실패 시)
           if: failure()
