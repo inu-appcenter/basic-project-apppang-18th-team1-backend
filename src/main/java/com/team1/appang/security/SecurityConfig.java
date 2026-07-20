@@ -47,6 +47,7 @@ public class SecurityConfig {
                 //"/api/auth"로 시작하는 모든 경로는 접근 가능
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers( "/api/products/**").permitAll() //상품 API 접근 가능
                         //그 외는 접근 차단. 이후 허가할 기능이 생기면 추가
                         .anyRequest().authenticated()
                 )
