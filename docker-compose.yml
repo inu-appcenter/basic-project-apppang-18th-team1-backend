@@ -37,3 +37,4 @@ services:
 volumes:
   appang-data:
   appang-redis-data:
+
