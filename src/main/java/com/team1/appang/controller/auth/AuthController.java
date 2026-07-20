@@ -1,12 +1,11 @@
 package com.team1.appang.controller.auth;
 
 
+import com.team1.appang.dto.MessageResponse;
 import com.team1.appang.dto.auth.*;
 import com.team1.appang.security.JwtTokenProvider;
 import com.team1.appang.service.auth.AuthService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -14,7 +13,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /*
