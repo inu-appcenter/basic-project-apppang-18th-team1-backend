@@ -128,7 +128,7 @@ public class AuthService {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
         //전화번호 당 하나의 계정만 생성 가능하므로 전화번호 중복 검사 로직 추가
-        if (memberRepository.existsByEmail(request.getPhoneNumber())) {
+        if (memberRepository.existsByPhoneNumber(request.getPhoneNumber())) {
             throw new IllegalArgumentException("이미 가입된 전화번호입니다.");
         }
 
