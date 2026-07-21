@@ -9,7 +9,6 @@ import com.team1.appang.exception.*;
 import com.team1.appang.repository.CartItemRepository;
 import com.team1.appang.repository.MemberRepository;
 import com.team1.appang.repository.ProductOptionRepository;
-import com.team1.appang.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,19 +29,23 @@ public class CartService {
     @Transactional
     public CartItemData addOrUpdateCartItem(Long memberId, Long productId, Long optionId, int quantity) {
 
+        //유효한 회원인지 확인
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(MemberNotFoundException::new);
+
         //수량이 0보다 작다면
         if (quantity <= 0) {
-            throw new InvalidQuantityException("수량은 1개 이상이어야 합니다.");
+            throw new InvalidQuantityException();
             //Exception 발생
         }
 
         //옵션을 확인하고 없다면 예외처리
         ProductOption option = productOptionRepository.findById(optionId)
-                .orElseThrow(() -> new ProductOptionNotFoundException("해당하는 옵션을 찾을 수 없습니다."));
+                .orElseThrow(ProductOptionNotFoundException::new);
 
         //요청받은 상품 id가 실제 옵션이 속한 상품과 일치하는지 검증
         if (!option.getProduct().getId().equals(productId)) {
-            throw new ProductNotFoundException("상품과 옵션 정보가 일치하지 않습니다.");
+            throw new ProductOptionMismatchException("상품과 옵션 정보가 일치하지 않습니다.");
         }
 
         int maxQuantity = option.getStockQuantity(); //최대 수량을 가져옴
@@ -59,9 +62,8 @@ public class CartService {
         //최대 수량을 넘을 경우 예외처리
         if (newQuantity > maxQuantity)
             throw new CartQuantityExceededException("최대 구매 가능 수량("+maxQuantity + "개)을 초과했습니다.");
+
         if (cartItem==null) {
-            Member member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> new MemberNotFoundException("회원 정보를 찾을 수 없습니다."));
             cartItem = CartItem.builder()
                     .member(member)
                     .productOption(option)
@@ -89,23 +91,17 @@ public class CartService {
     //쿠폰 할인, 배송비는 0으로 처리
     private CartSummary calculateSummary(Long memberId){
         //회원의 장바구니 속 상품을 꺼내옴
-        List<CartItem> items = cartItemRepository.findByMemberId(memberId);
+        List<CartItem> items = cartItemRepository.findByMemberIdWithProductInfo(memberId);
 
-        int totalOriginPrice = items.stream()
-                .mapToInt(item ->{
-                    ProductOption option = item.getProductOption();
-                    int unitPrice = option.getProduct().getOriginPrice();
-                    return unitPrice*item.getQuantity();
-                })
-                .sum();
+        int totalOriginPrice = 0;
+        int totalSalePrice = 0;
 
-        int totalSalePrice = items.stream()
-                .mapToInt(item -> {
-                    ProductOption option = item.getProductOption();
-                    int unitSalePrice = option.getProduct().getSalePrice();
-                    return unitSalePrice*item.getQuantity();
-                })
-                .sum();
+        for (CartItem item : items) {
+            ProductOption option = item.getProductOption();
+            int quantity = item.getQuantity();
+            totalOriginPrice += option.getProduct().getOriginPrice() * quantity;
+            totalSalePrice += option.getProduct().getSalePrice() * quantity;
+        }
 
         int totalInstantDiscount = totalOriginPrice-totalSalePrice;
         int totalCouponDiscount = 0;

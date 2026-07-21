@@ -10,10 +10,12 @@ public enum ProductSortType {
 
     //프론트에서 온 문자열을 안전하게 Enum으로 변환
     //잘못된 값이 오면 기본값(LATEST)으로 처리
+    //camelCase(priceLow)든 snake_case(price_low)든 둘 다 받아들이도록 정규화
     public static ProductSortType from(String value) {
         if (value == null) return LATEST;
         try {
-            return ProductSortType.valueOf(value.toUpperCase());
+            String normalized = value.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
+            return ProductSortType.valueOf(normalized);
         } catch (IllegalArgumentException e) {
             return LATEST; //기본값은 LATEST
         }
