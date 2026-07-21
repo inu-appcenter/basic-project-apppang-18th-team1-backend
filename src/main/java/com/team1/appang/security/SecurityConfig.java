@@ -11,7 +11,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
+import org.springframework.web.cors.*;
+import java.util.List;
 /*
 'org.springframework.boot:spring-boot-starter-security'
 의존성 추가로 인해 로그인을 하지 않으면 접근이 차단되는 문제 발생
@@ -39,6 +40,17 @@ public class SecurityConfig {
         http
                 //CSRF 보호기능, 로그인창 폼, HTTP 기본 인증 비활성화
                 .csrf(csrf -> csrf.disable())
+                .cors(cors->cors.configurationSource(request -> {
+                    CorsConfiguration configuration = new CorsConfiguration();
+                    configuration.setAllowedOrigins(List.of(
+                            "http://localhost:5173",
+                            "https://appang.duckdns.org"
+                    ));
+                    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+                    configuration.setAllowedHeaders(List.of("*"));
+                    configuration.setAllowCredentials(true);
+                    return configuration;
+                }))
                 .formLogin(form->form.disable())
                 .httpBasic(basic -> basic.disable())
 
