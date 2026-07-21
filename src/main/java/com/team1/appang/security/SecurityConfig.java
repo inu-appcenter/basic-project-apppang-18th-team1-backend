@@ -57,13 +57,17 @@ public class SecurityConfig {
                 //서버측에 세션을 저장하거나 유지하지 않도록 설정함
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                //"/api/auth"로 시작하는 모든 경로는 접근 가능
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers( "/api/products/**").permitAll() //상품 API 접근 가능
 
-                        //그 외는 접근 차단. 이후 허가할 기능이 생기면 추가
-                        .anyRequest().authenticated()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()//"/api/auth"로 시작하는 모든 경로는 접근 가능
+                        .requestMatchers( "/api/products/**").permitAll() //상품 API 접근 가능
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml"
+                        ).permitAll() //Swagger 경로도 허가
+                        .anyRequest().authenticated()//그 외는 접근 차단. 이후 허가할 기능이 생기면 추가
                 )
                 //JwtFilter를 UsernamePasswordAuthenticationFilter 앞에 등록
                 //-> Authorization 헤더의 토큰을 검증하고 인증 정보를 세팅하는 로직이 실제로 실행되도록 함
