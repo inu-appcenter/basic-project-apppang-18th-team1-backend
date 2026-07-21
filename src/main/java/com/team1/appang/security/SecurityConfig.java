@@ -38,6 +38,7 @@ public class SecurityConfig {
         http
                 //CSRF 보호기능, 로그인창 폼, HTTP 기본 인증 비활성화
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> {})
                 .formLogin(form->form.disable())
                 .httpBasic(basic -> basic.disable())
 
