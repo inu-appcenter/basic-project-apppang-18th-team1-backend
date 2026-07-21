@@ -20,11 +20,10 @@ services:
     volumes:
       - appang-redis-data:/data
 
+
   backend:
-    build: .
+    image: cshoney/appang-backend:latest
     container_name: appang-backend
-    ports:
-      - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SUPABASE_URL: ${SUPABASE_URL}
@@ -34,7 +33,17 @@ services:
       - db
       - redis
 
+  nginx:
+    image: cshoney/appang-frontend:latest
+    container_name: appang-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+
 volumes:
   appang-data:
   appang-redis-data:
-

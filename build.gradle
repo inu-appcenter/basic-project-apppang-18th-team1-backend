@@ -6,6 +6,10 @@ plugins {
 tasks.named('jar') {
 	enabled = false
 }
+tasks.named('test') {
+    systemProperty 'spring.profiles.active', 'local'
+    useJUnitPlatform()
+}
 
 group = 'com.team1'
 version = '0.0.1-SNAPSHOT'

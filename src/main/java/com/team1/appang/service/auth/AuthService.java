@@ -7,8 +7,10 @@ import com.team1.appang.security.JwtTokenProvider;
 import com.team1.appang.security.RefreshTokenStore; //로그아웃 시 refreshToken을 무효화하기 위해 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication; //잘못된 import 수정
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // Spring 트랜잭션으로 수정
@@ -128,7 +130,7 @@ public class AuthService {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
         //전화번호 당 하나의 계정만 생성 가능하므로 전화번호 중복 검사 로직 추가
-        if (memberRepository.existsByEmail(request.getPhoneNumber())) {
+        if (memberRepository.existsByPhoneNumber(request.getPhoneNumber())) {
             throw new IllegalArgumentException("이미 가입된 전화번호입니다.");
         }
 
@@ -145,5 +147,19 @@ public class AuthService {
 
         Member savedMember = memberRepository.save(member);
         return savedMember.getId();
+    }
+
+    //로그인한 회원의 id를 받환받아 존재하는 회원인지 검증
+    //비로그인 상태라면 null
+    public Long getCurrentMemberId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return null;
+        }
+        String email = (String) authentication.getPrincipal();
+        return memberRepository.findByEmail(email)
+                .map(Member::getId)
+                .orElse(null);
     }
 }
