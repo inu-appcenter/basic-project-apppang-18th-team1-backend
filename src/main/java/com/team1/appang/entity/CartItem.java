@@ -36,10 +36,5 @@ public class CartItem {
         this.productOption = productOption;
     }
 
-    //장바구니 API 에서 사용하는 수량 누적용 메서드
-    public void addQuantity(int amount){
-        this.quantity += amount;
-    }
-
 
 }

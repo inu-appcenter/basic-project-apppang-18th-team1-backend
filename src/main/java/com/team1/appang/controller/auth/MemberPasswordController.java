@@ -5,7 +5,7 @@ package com.team1.appang.controller.auth;
 MemberPasswordService를 사용한다
  */
 
-import com.team1.appang.dto.MessageResponse;
+import com.team1.appang.dto.auth.MessageResponse;
 import com.team1.appang.dto.auth.ResetPasswordRequest;
 import com.team1.appang.exception.InvalidPasswordFormatException;
 import com.team1.appang.exception.InvalidTokenException;
