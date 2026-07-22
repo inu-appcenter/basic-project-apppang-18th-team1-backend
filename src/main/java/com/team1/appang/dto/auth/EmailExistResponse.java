@@ -21,11 +21,6 @@ public class EmailExistResponse {
     public static EmailExistResponse success(boolean isAvailable, String message) {
         return new EmailExistResponse(isAvailable, message);
     }
-    //이메일 형식 오류 등으로 실패시
-    public static EmailExistResponse fail(String message) {
-        return new EmailExistResponse(null, message);
-    }
-
 
 
 }

@@ -1,0 +1,116 @@
+package com.team1.appang.service.cart;
+
+import com.team1.appang.dto.cart.CartItemData;
+import com.team1.appang.dto.cart.CartSummary;
+import com.team1.appang.entity.CartItem;
+import com.team1.appang.entity.Member;
+import com.team1.appang.entity.ProductOption;
+import com.team1.appang.exception.*;
+import com.team1.appang.repository.CartItemRepository;
+import com.team1.appang.repository.MemberRepository;
+import com.team1.appang.repository.ProductOptionRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+
+@Service
+@RequiredArgsConstructor
+public class CartService {
+
+    //레포지토리 연결
+    private final CartItemRepository cartItemRepository;
+    private final ProductOptionRepository productOptionRepository;
+    private final MemberRepository memberRepository;
+
+    //상품 추가 또는 수정 로직
+    @Transactional
+    public CartItemData addOrUpdateCartItem(Long memberId, Long productId, Long optionId, int quantity) {
+
+        //유효한 회원인지 확인
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(MemberNotFoundException::new);
+
+        //수량이 0보다 작다면
+        if (quantity <= 0) {
+            throw new InvalidQuantityException();
+            //Exception 발생
+        }
+
+        //옵션을 확인하고 없다면 예외처리
+        ProductOption option = productOptionRepository.findById(optionId)
+                .orElseThrow(ProductOptionNotFoundException::new);
+
+        //요청받은 상품 id가 실제 옵션이 속한 상품과 일치하는지 검증
+        if (!option.getProduct().getId().equals(productId)) {
+            throw new ProductOptionMismatchException("상품과 옵션 정보가 일치하지 않습니다.");
+        }
+
+        int maxQuantity = option.getStockQuantity(); //최대 수량을 가져옴
+
+        //상품 아이디와 옵션 아이디를 가져와 장바구니 생성
+        CartItem cartItem = cartItemRepository
+                .findByMemberIdAndProductOptionId(memberId, optionId)
+                .orElse(null);
+
+        //장바구니 수량을 결정
+        //만약 null이라면 기존값은 0으로 처리함
+        int newQuantity = (cartItem == null? 0 : cartItem.getQuantity()) + quantity;
+
+        //최대 수량을 넘을 경우 예외처리
+        if (newQuantity > maxQuantity)
+            throw new CartQuantityExceededException("최대 구매 가능 수량("+maxQuantity + "개)을 초과했습니다.");
+
+        if (cartItem==null) {
+            cartItem = CartItem.builder()
+                    .member(member)
+                    .productOption(option)
+                    .quantity(quantity)
+                    .isSelected(true) //새로 담긴 상품은 기본적으로 선택 상태가 됨
+                    .build();
+            cartItemRepository.save(cartItem);
+        }else {
+            cartItem.addQuantity(quantity); //장바구니에 같은 상품이 있다면 수량을 더해줌
+        }
+
+        CartSummary summary = calculateSummary(memberId);
+
+        return new CartItemData(
+                cartItem.getId(),
+                productId,
+                optionId,
+                cartItem.getQuantity(),
+                maxQuantity,
+                summary
+        );
+    }
+
+    //회원의 장바구니 전체를 기준으로 결제 금액 계산
+    //쿠폰 할인, 배송비는 0으로 처리
+    private CartSummary calculateSummary(Long memberId){
+        //회원의 장바구니 속 상품을 꺼내옴
+        List<CartItem> items = cartItemRepository.findByMemberIdWithProductInfo(memberId);
+
+        int totalOriginPrice = 0;
+        int totalSalePrice = 0;
+
+        for (CartItem item : items) {
+            ProductOption option = item.getProductOption();
+            int quantity = item.getQuantity();
+            totalOriginPrice += option.getProduct().getOriginPrice() * quantity;
+            totalSalePrice += option.getProduct().getSalePrice() * quantity;
+        }
+
+        int totalInstantDiscount = totalOriginPrice-totalSalePrice;
+        int totalCouponDiscount = 0;
+        int totalShippingFee = 0;
+        int totalPaymentAmount = totalOriginPrice - totalInstantDiscount - totalCouponDiscount + totalShippingFee;
+
+        return new CartSummary(totalOriginPrice, totalInstantDiscount, totalCouponDiscount, totalShippingFee, totalPaymentAmount);
+
+    }
+
+
+}

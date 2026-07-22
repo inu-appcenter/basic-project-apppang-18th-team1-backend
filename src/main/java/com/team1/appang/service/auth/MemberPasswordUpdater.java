@@ -2,6 +2,7 @@ package com.team1.appang.service.auth;
 
 import com.team1.appang.dto.auth.ResetPasswordRequest;
 import com.team1.appang.entity.Member;
+import com.team1.appang.exception.MemberNotFoundException;
 import com.team1.appang.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +22,7 @@ public class MemberPasswordUpdater {
     @Transactional
     public String updatePassword(ResetPasswordRequest request) {
         Member member = memberRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));
+                .orElseThrow(MemberNotFoundException::new);
 
         String encodedPassword = passwordEncoder.encode(request.getNewPassword());
         member.updatePassword(encodedPassword);

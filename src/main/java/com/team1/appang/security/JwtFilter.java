@@ -54,4 +54,14 @@ public class JwtFilter extends OncePerRequestFilter {
         //다음 필터로 요청을 넘김
         filterChain.doFilter(request, response);
     }
+
+    //Swagger 요청은 Filter를 거치지 않게 설정
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-resources");
+
+    }
 }

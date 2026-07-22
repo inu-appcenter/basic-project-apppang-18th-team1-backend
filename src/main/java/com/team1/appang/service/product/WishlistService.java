@@ -28,7 +28,7 @@ public class WishlistService {
     public WishlistToggleResponse toggle(Long memberId, Long productId) {
         //상품이 실제로 존재하는지 먼저 확인
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException("존재하지 않는 상품입니다."));
+                .orElseThrow(ProductNotFoundException::new);
 
         //이미 찜한 상태인지 조회
         Optional<Wishlist> existing = wishlistRepository.findByMemberIdAndProductId(memberId, productId);
@@ -40,7 +40,7 @@ public class WishlistService {
         } else {
             //아직 찜 안 한 상태 -> 추가
             Member member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> new IllegalStateException("존재하지 않는 회원입니다.")); //인증된 회원이므로 사실상 발생 안 함
+                    .orElseThrow(IllegalStateException::new); //인증된 회원이므로 사실상 발생 안 함
 
             Wishlist wishlist = Wishlist.builder()
                     .member(member)

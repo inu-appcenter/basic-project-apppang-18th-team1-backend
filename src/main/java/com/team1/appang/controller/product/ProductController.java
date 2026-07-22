@@ -1,21 +1,19 @@
 package com.team1.appang.controller.product;
 
-import com.team1.appang.dto.auth.MessageResponse;
+import com.team1.appang.dto.MessageResponse;
 import com.team1.appang.dto.product.ProductDetailResponse;
 import com.team1.appang.dto.product.ProductListResponse;
 import com.team1.appang.dto.product.ProductSortType;
 import com.team1.appang.dto.product.WishlistToggleResponse;
-import com.team1.appang.entity.Member;
+import com.team1.appang.exception.MemberNotFoundException;
 import com.team1.appang.exception.ProductNotFoundException;
-import com.team1.appang.repository.MemberRepository;
+import com.team1.appang.service.auth.AuthService;
 import com.team1.appang.service.product.ProductDetailService;
 import com.team1.appang.service.product.ProductService;
 import com.team1.appang.service.product.WishlistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,8 +23,8 @@ public class ProductController {
     //서비스 연결
     private final ProductService productService;
     private final ProductDetailService productDetailService; //상세 조회 서비스
-    private final MemberRepository memberRepository; // 로그인한 회원의 email로 memberId를 조회하기 위함
     private final WishlistService wishlistService;
+    private final AuthService authService; //로그인한 회원 id 조회는 AuthService에 위임
 
     //상품 목록 조회 API
     //전체 조회 시 카테고리는 null이 됨
@@ -57,7 +55,7 @@ public class ProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<?> getProductDetail(@PathVariable Long productId) {
         try {
-            Long memberId = getCurrentMemberId(); //로그인 안 했으면 null 반환
+            Long memberId = authService.getCurrentMemberId(); //로그인 안 했으면 null 반환
             ProductDetailResponse response = productDetailService.getProductDetail(productId, memberId);
             return ResponseEntity.ok(response);
         } catch (ProductNotFoundException e) {
@@ -69,7 +67,7 @@ public class ProductController {
     //로그인 상태에서만 호출 가능. 비로그인 시 401 반환
     @PostMapping("/{productId}/wishlist")
     public ResponseEntity<?> toggleWishlist(@PathVariable Long productId) {
-        Long memberId = getCurrentMemberId();
+        Long memberId = authService.getCurrentMemberId();
 
         //로그인하지 않은 상태면 401로 막음
         if (memberId == null) {
@@ -80,22 +78,9 @@ public class ProductController {
         try {
             WishlistToggleResponse response = wishlistService.toggle(memberId, productId);
             return ResponseEntity.ok(response);
-        } catch (ProductNotFoundException e) {
+
+        } catch (ProductNotFoundException | MemberNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
         }
-    }
-
-    //SecurityContext에서 현재 로그인한 회원의 id를 꺼내는 헬퍼 메서드
-    //JwtFilter가 인증 정보를 세팅해뒀다면 이메일을 꺼내 memberId로 변환, 없으면 null
-    private Long getCurrentMemberId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()
-                || "anonymousUser".equals(authentication.getPrincipal())) {
-            return null;
-        }
-        String email = (String) authentication.getPrincipal();
-        return memberRepository.findByEmail(email)
-                .map(Member::getId)
-                .orElse(null);
     }
 }
