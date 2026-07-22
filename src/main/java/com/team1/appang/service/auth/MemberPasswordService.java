@@ -24,7 +24,7 @@ import java.util.Map;
 public class MemberPasswordService {
     //비밀번호 조건 확인을 위한 정규식
     private static final String PASSWORD_PATTERN =
-            "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+|~\\-=\\[\\]{};:'\"<>,.?/]).{8,}$";
+            "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+|~={};:'<>,.?/]).{8,}$";
     private final RestClient restClient; //Bean으로 등록된 RestClient를 주입받음
     private final MemberPasswordUpdater memberPasswordUpdater; //DB 업데이트를 전담하는 별도 빈
 
