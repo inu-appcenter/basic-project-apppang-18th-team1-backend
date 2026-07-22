@@ -7,8 +7,10 @@ import com.team1.appang.security.JwtTokenProvider;
 import com.team1.appang.security.RefreshTokenStore; //로그아웃 시 refreshToken을 무효화하기 위해 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication; //잘못된 import 수정
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // Spring 트랜잭션으로 수정
@@ -145,5 +147,19 @@ public class AuthService {
 
         Member savedMember = memberRepository.save(member);
         return savedMember.getId();
+    }
+
+    //로그인한 회원의 id를 받환받아 존재하는 회원인지 검증
+    //비로그인 상태라면 null
+    public Long getCurrentMemberId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return null;
+        }
+        String email = (String) authentication.getPrincipal();
+        return memberRepository.findByEmail(email)
+                .map(Member::getId)
+                .orElse(null);
     }
 }

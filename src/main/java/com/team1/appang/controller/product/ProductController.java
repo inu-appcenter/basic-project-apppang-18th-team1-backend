@@ -1,6 +1,6 @@
 package com.team1.appang.controller.product;
 
-import com.team1.appang.dto.auth.MessageResponse;
+import com.team1.appang.dto.MessageResponse;
 import com.team1.appang.dto.product.ProductDetailResponse;
 import com.team1.appang.dto.product.ProductListResponse;
 import com.team1.appang.dto.product.ProductSortType;
