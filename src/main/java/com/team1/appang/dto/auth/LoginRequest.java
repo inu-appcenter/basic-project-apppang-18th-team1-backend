@@ -12,7 +12,7 @@ public record LoginRequest(
         @Email(message = "올바른 이메일 형식이 아닙니다.")
         String email,
         @NotBlank(message = "비밀번호는 필수 입력 항목입니다.")
-        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$",
-                message = "비밀번호는 8자 이상이며, 영문과 숫자를 모두 포함해야 합니다.")
+        @Pattern(regexp =  "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+|~={};:'<>,.?/]).{8,}$",
+                message = "비밀번호 형식이 옳지 않습니다.")
         String password
 ){}
