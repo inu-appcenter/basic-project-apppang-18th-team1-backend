@@ -1,30 +1,150 @@
 package com.team1.appang.service.cart;
 
-import com.team1.appang.dto.cart.CartItemData;
-import com.team1.appang.dto.cart.CartSummary;
-import com.team1.appang.entity.CartItem;
-import com.team1.appang.entity.Member;
-import com.team1.appang.entity.ProductOption;
+import com.team1.appang.dto.cart.*;
+import com.team1.appang.entity.*;
 import com.team1.appang.exception.*;
 import com.team1.appang.repository.CartItemRepository;
 import com.team1.appang.repository.MemberRepository;
 import com.team1.appang.repository.ProductOptionRepository;
-import com.team1.appang.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CartService {
 
-    //레포지토리 연결
     private final CartItemRepository cartItemRepository;
     private final ProductOptionRepository productOptionRepository;
     private final MemberRepository memberRepository;
+
+    //X 버튼을 누른 그 상품(cartItemId) 하나만 삭제하고, 남은 장바구니 기준으로 요약을 다시 계산
+    @Transactional
+    public CartDeleteData deleteCartItem(Long memberId, Long cartItemId) {
+
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다."));
+
+        if (!cartItem.getMember().getId().equals(memberId)) {
+            throw new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다.");
+        }
+
+        cartItemRepository.delete(cartItem);
+
+        CartDeleteSummary summary = calculateDeleteSummary(memberId);
+        return new CartDeleteData(cartItemId, summary);
+    }
+
+    //삭제 후 남은 장바구니 기준으로 결제 금액 요약 계산
+    private CartDeleteSummary calculateDeleteSummary(Long memberId) {
+        List<CartItem> items = cartItemRepository.findByMemberId(memberId);
+
+        int totalOriginPrice = items.stream()
+                .mapToInt(item -> {
+                    ProductOption option = item.getProductOption();
+                    int unitPrice = option.getProduct().getOriginPrice() + option.getAdditionalPrice();
+                    return unitPrice * item.getQuantity();
+                }).sum();
+
+        int totalProductPrice = items.stream()
+                .mapToInt(item -> {
+                    ProductOption option = item.getProductOption();
+                    int unitPrice = option.getProduct().getSalePrice() + option.getAdditionalPrice();
+                    return unitPrice * item.getQuantity();
+                }).sum();
+
+        int totalDiscount = totalOriginPrice - totalProductPrice;
+        int totalPaymentAmount = totalProductPrice;
+
+        return new CartDeleteSummary(totalProductPrice, totalDiscount, totalPaymentAmount);
+    }
+
+
+    //장바구니 목록 조회 로직
+    public CartListData getCartList(Long memberId) {
+        List<CartItem> items = cartItemRepository.findByMemberId(memberId);
+
+        Map<ShippingType, List<CartItem>> grouped = items.stream()
+                .collect(Collectors.groupingBy(item -> item.getProductOption().getShippingType()));
+
+        List<ShippingGroupData> shippingGroups = new ArrayList<>();
+        int groupId = 1;
+        for (ShippingType type : ShippingType.values()) {
+            List<CartItem> groupItems = grouped.get(type);
+            if (groupItems == null || groupItems.isEmpty()) {
+                continue;
+            }
+            List<CartListItemData> itemDataList = groupItems.stream()
+                    .map(this::toItemData)
+                    .toList();
+            // enum에 있는 displayName을 그대로 사용 (별도 변환 메서드 불필요)
+            shippingGroups.add(new ShippingGroupData(groupId++, type.getDisplayName(), itemDataList));
+        }
+
+        CartListSummary summary = calculateListSummary(items);
+        return new CartListData(shippingGroups, summary);
+    }
+
+    private CartListItemData toItemData(CartItem item) {
+        ProductOption option = item.getProductOption();
+        Product product = option.getProduct();
+
+        int originalPrice = product.getOriginPrice() + option.getAdditionalPrice();
+        int salePrice = product.getSalePrice() + option.getAdditionalPrice();
+
+        CartItemPrice price = new CartItemPrice(originalPrice, product.getDiscountRate(), salePrice);
+
+        String estimatedArrivalDate = LocalDate.now().plusDays(1).toString();
+
+        return new CartListItemData(
+                item.getId(),
+                product.getId(),
+                product.getName(),
+                product.getMainImageUrl(),
+                product.getBrand().getName(),
+                option.getOptionValue(), // 속성 하나만 그대로 사용
+                estimatedArrivalDate,
+                item.getQuantity(),
+                option.getStockQuantity(),
+                item.isSelected(),
+                price
+        );
+    }
+
+    private CartListSummary calculateListSummary(List<CartItem> items) {
+        int totalProductPrice = items.stream()
+                .mapToInt(item -> {
+                    ProductOption option = item.getProductOption();
+                    int unitSalePrice = option.getProduct().getSalePrice() + option.getAdditionalPrice();
+                    return unitSalePrice * item.getQuantity();
+                })
+                .sum();
+
+        int totalCouponDiscount = 0;
+        int totalPaymentAmount = totalProductPrice - totalCouponDiscount;
+
+        return new CartListSummary(totalProductPrice, totalCouponDiscount, totalPaymentAmount);
+    }
+
+    //장바구니 항목 선택/선택취소 로직
+    @Transactional
+    public CartItem updateSelection(Long memberId, Long cartItemId, boolean selected) {
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다."));
+
+        if (!cartItem.getMember().getId().equals(memberId)) {
+            throw new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다.");
+        }
+
+        cartItem.changeSelected(selected);
+        return cartItem;
+    }
 
     //상품 추가 또는 수정 로직
     @Transactional
