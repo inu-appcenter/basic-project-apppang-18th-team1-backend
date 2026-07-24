@@ -29,10 +29,10 @@ public class CartService {
     public CartDeleteData deleteCartItem(Long memberId, Long cartItemId) {
 
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다."));
+                .orElseThrow(CartItemNotFoundException::new);
 
         if (!cartItem.getMember().getId().equals(memberId)) {
-            throw new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다.");
+            throw new CartItemNotFoundException();
         }
 
         cartItemRepository.delete(cartItem);
@@ -43,21 +43,17 @@ public class CartService {
 
     //삭제 후 남은 장바구니 기준으로 결제 금액 요약 계산
     private CartDeleteSummary calculateDeleteSummary(Long memberId) {
-        List<CartItem> items = cartItemRepository.findByMemberId(memberId);
+        List<CartItem> items = cartItemRepository.findByMemberIdWithProductInfo(memberId);
 
-        int totalOriginPrice = items.stream()
-                .mapToInt(item -> {
-                    ProductOption option = item.getProductOption();
-                    int unitPrice = option.getProduct().getOriginPrice() + option.getAdditionalPrice();
-                    return unitPrice * item.getQuantity();
-                }).sum();
+        int totalOriginPrice = 0;
+        int totalProductPrice = 0;
 
-        int totalProductPrice = items.stream()
-                .mapToInt(item -> {
-                    ProductOption option = item.getProductOption();
-                    int unitPrice = option.getProduct().getSalePrice() + option.getAdditionalPrice();
-                    return unitPrice * item.getQuantity();
-                }).sum();
+        for (CartItem item : items) {
+            ProductOption option = item.getProductOption();
+            int quantity = item.getQuantity();
+            totalOriginPrice += (option.getProduct().getOriginPrice() + option.getAdditionalPrice()) * quantity;
+            totalProductPrice += (option.getProduct().getSalePrice() + option.getAdditionalPrice()) * quantity;
+        }
 
         int totalDiscount = totalOriginPrice - totalProductPrice;
         int totalPaymentAmount = totalProductPrice;
@@ -65,10 +61,9 @@ public class CartService {
         return new CartDeleteSummary(totalProductPrice, totalDiscount, totalPaymentAmount);
     }
 
-
     //장바구니 목록 조회 로직
     public CartListData getCartList(Long memberId) {
-        List<CartItem> items = cartItemRepository.findByMemberId(memberId);
+        List<CartItem> items = cartItemRepository.findByMemberIdWithProductInfo(memberId);
 
         Map<ShippingType, List<CartItem>> grouped = items.stream()
                 .collect(Collectors.groupingBy(item -> item.getProductOption().getShippingType()));
@@ -136,10 +131,10 @@ public class CartService {
     @Transactional
     public CartItem updateSelection(Long memberId, Long cartItemId, boolean selected) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다."));
+                .orElseThrow(CartItemNotFoundException::new);
 
         if (!cartItem.getMember().getId().equals(memberId)) {
-            throw new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다.");
+            throw new CartItemNotFoundException();
         }
 
         cartItem.changeSelected(selected);
@@ -157,7 +152,6 @@ public class CartService {
         //수량이 0보다 작다면
         if (quantity <= 0) {
             throw new InvalidQuantityException();
-            //Exception 발생
         }
 
         //옵션을 확인하고 없다면 예외처리
@@ -178,13 +172,13 @@ public class CartService {
 
         //장바구니 수량을 결정
         //만약 null이라면 기존값은 0으로 처리함
-        int newQuantity = (cartItem == null? 0 : cartItem.getQuantity()) + quantity;
+        int newQuantity = (cartItem == null ? 0 : cartItem.getQuantity()) + quantity;
 
         //최대 수량을 넘을 경우 예외처리
         if (newQuantity > maxQuantity)
-            throw new CartQuantityExceededException("최대 구매 가능 수량("+maxQuantity + "개)을 초과했습니다.");
+            throw new CartQuantityExceededException("최대 구매 가능 수량(" + maxQuantity + "개)을 초과했습니다.");
 
-        if (cartItem==null) {
+        if (cartItem == null) {
             cartItem = CartItem.builder()
                     .member(member)
                     .productOption(option)
@@ -192,7 +186,7 @@ public class CartService {
                     .isSelected(true) //새로 담긴 상품은 기본적으로 선택 상태가 됨
                     .build();
             cartItemRepository.save(cartItem);
-        }else {
+        } else {
             cartItem.addQuantity(quantity); //장바구니에 같은 상품이 있다면 수량을 더해줌
         }
 
@@ -210,8 +204,8 @@ public class CartService {
 
     //회원의 장바구니 전체를 기준으로 결제 금액 계산
     //쿠폰 할인, 배송비는 0으로 처리
-    private CartSummary calculateSummary(Long memberId){
-        //회원의 장바구니 속 상품을 꺼내옴
+    private CartSummary calculateSummary(Long memberId) {
+        //회원의 장바구니 속 상품을 꺼내옴 (fetch join으로 N+1 방지)
         List<CartItem> items = cartItemRepository.findByMemberIdWithProductInfo(memberId);
 
         int totalOriginPrice = 0;
@@ -224,14 +218,11 @@ public class CartService {
             totalSalePrice += option.getProduct().getSalePrice() * quantity;
         }
 
-        int totalInstantDiscount = totalOriginPrice-totalSalePrice;
+        int totalInstantDiscount = totalOriginPrice - totalSalePrice;
         int totalCouponDiscount = 0;
         int totalShippingFee = 0;
         int totalPaymentAmount = totalOriginPrice - totalInstantDiscount - totalCouponDiscount + totalShippingFee;
 
         return new CartSummary(totalOriginPrice, totalInstantDiscount, totalCouponDiscount, totalShippingFee, totalPaymentAmount);
-
     }
-
-
 }
