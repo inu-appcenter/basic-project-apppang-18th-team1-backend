@@ -10,6 +10,9 @@ import java.util.Optional;
 //장바구니 레포지토리
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
+    //회원 id를 기준으로 지우는 옵션
+    void deleteByMemberId(Long memberId);
+
     //같은 회원이 같은 옵션의 상품을 담았는지 확인
     Optional<CartItem> findByMemberIdAndProductOptionId(Long memberId, Long productOptionId);
 

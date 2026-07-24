@@ -35,6 +35,12 @@ public class CartItem {
         this.member=member;
         this.productOption = productOption;
     }
+    
+
+    //장바구니 선택/취소 토글 API 에서 사용하는 isSelected 변환 메서드
+    public void changeSelected(boolean selected) {
+        this.isSelected = selected;
+    }
 
     //장바구니 API 에서 사용하는 수량 누적용 메서드
     public void addQuantity(int amount){
