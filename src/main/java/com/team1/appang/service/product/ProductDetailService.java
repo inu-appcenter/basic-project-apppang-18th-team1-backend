@@ -25,7 +25,7 @@ public class ProductDetailService {
     //memberId는 비로그인 시 null로 전달됨
     public ProductDetailResponse getProductDetail(Long productId, Long memberId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException("존재하지 않는 상품입니다."));
+                .orElseThrow(ProductNotFoundException::new);
 
         List<ProductOption> options = productOptionRepository.findByProductId(productId);
 

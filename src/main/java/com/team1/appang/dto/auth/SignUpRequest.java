@@ -16,14 +16,14 @@ public class SignUpRequest {
     @Size(min = 2, max = 20, message = "이름은 2자에서 20자 사이여야 합니다.")
     private String name;
 
-
     //비밀번호는 8자 이상, 영문+숫자 조합의 정규표현식으로 Patten 검증 사용
     //(?=.*[A-Za-z]) : 영문자 포함 여부 체크
     //(?=.*\d) : 숫자 포함 체크
     //[A-Za-z\d]{8,} : 글자수와 종류 제한. (영문+숫자만 가능)
+    //!@#$%^&*()_+|~={};:'<>,.?/ 특수문자 허용
     @NotBlank(message = "비밀번호는 필수 입력 항목입니다.")
-    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$",
-    message = "비밀번호는 8자 이상이며, 영문과 숫자를 모두 포함해야 합니다.")
+    @Pattern(regexp =  "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+|~={};:'<>,.?/]).{8,}$",
+    message = "비밀번호 형식이 옳지 않습니다.")
     private String password;
 
     @NotBlank(message = "이메일은 필수 입력 항목입니다.")

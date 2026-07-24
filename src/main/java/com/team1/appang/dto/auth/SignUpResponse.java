@@ -23,9 +23,5 @@ public class SignUpResponse {
         return new SignUpResponse(id, message, null);
     }
 
-    //회원가입에 실패했을때 사용하는 응답 생성 메서드
-    //실패 메시지와 실패 요인(필드)를 반환
-    public static SignUpResponse fail(String message, String field){
-        return new SignUpResponse(null, message, field);
-    }
+
 }

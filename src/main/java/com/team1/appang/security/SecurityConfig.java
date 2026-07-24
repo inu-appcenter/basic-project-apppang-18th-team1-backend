@@ -11,7 +11,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
+import org.springframework.web.cors.*;
+import java.util.List;
 /*
 'org.springframework.boot:spring-boot-starter-security'
 의존성 추가로 인해 로그인을 하지 않으면 접근이 차단되는 문제 발생
@@ -39,19 +40,34 @@ public class SecurityConfig {
         http
                 //CSRF 보호기능, 로그인창 폼, HTTP 기본 인증 비활성화
                 .csrf(csrf -> csrf.disable())
+                .cors(cors->cors.configurationSource(request -> {
+                    CorsConfiguration configuration = new CorsConfiguration();
+                    configuration.setAllowedOrigins(List.of(
+                            "http://localhost:5173",
+                            "https://appang.duckdns.org"
+                    ));
+                    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+                    configuration.setAllowedHeaders(List.of("*"));
+                    configuration.setAllowCredentials(true);
+                    return configuration;
+                }))
                 .formLogin(form->form.disable())
                 .httpBasic(basic -> basic.disable())
 
                 //서버측에 세션을 저장하거나 유지하지 않도록 설정함
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                //"/api/auth"로 시작하는 모든 경로는 접근 가능
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers( "/api/products/**").permitAll() //상품 API 접근 가능
 
-                        //그 외는 접근 차단. 이후 허가할 기능이 생기면 추가
-                        .anyRequest().authenticated()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()//"/api/auth"로 시작하는 모든 경로는 접근 가능
+                        .requestMatchers( "/api/products/**").permitAll() //상품 API 접근 가능
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml"
+                        ).permitAll() //Swagger 경로도 허가
+                        .anyRequest().authenticated()//그 외는 접근 차단. 이후 허가할 기능이 생기면 추가
                 )
                 //JwtFilter를 UsernamePasswordAuthenticationFilter 앞에 등록
                 //-> Authorization 헤더의 토큰을 검증하고 인증 정보를 세팅하는 로직이 실제로 실행되도록 함

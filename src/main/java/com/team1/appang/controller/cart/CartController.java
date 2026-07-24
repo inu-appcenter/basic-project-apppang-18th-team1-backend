@@ -71,9 +71,11 @@ public class CartController {
                     request.quantity()
             );
             return ResponseEntity.ok(new CartAddResponse("장바구니에 담았습니다.", data));
-        } catch (ProductNotFoundException | ProductOptionNotFoundException | MemberNotFoundException e) {
+        } catch (ProductOptionNotFoundException | MemberNotFoundException e) {
+            //404
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
-        } catch (CartQuantityExceededException | InvalidQuantityException e) {
+        } catch (ProductOptionMismatchException | CartQuantityExceededException | InvalidQuantityException e) {
+            //400
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
 
