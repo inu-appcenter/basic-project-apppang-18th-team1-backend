@@ -10,6 +10,13 @@ import com.team1.appang.exception.MemberNotFoundException;
 import com.team1.appang.exception.PasswordMismatchException;
 import com.team1.appang.security.JwtTokenProvider;
 import com.team1.appang.service.auth.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -29,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
  ========================================
  */
 
+@Tag(name = "Auth", description = "회원가입 / 로그인 / 로그아웃 관련 API")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor // 서비스 자동 주입을 위해 추가
@@ -37,6 +45,17 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider; //JWT 토큰 의존성 추가
 
     // 토큰 재발급 API
+    @Operation(summary = "토큰 재발급", description = "쿠키에 담긴 refreshToken으로 accessToken을 재발급합니다. 별도 인증 헤더는 필요 없습니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "재발급 성공",
+                    content = @Content(schema = @Schema(implementation = TokenReissueResponse.class))),
+            @ApiResponse(responseCode = "401", description = "토큰이 유효하지 않거나 회원을 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "InvalidTokenException.message 또는 MemberNotFoundException.message"
+                }
+                """)))
+    })
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(
             //쿠키에 담겨있는 refreshToken값을 자동으로 바인딩한다
@@ -52,8 +71,19 @@ public class AuthController {
                     .body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     //이메일 찾기 API
+    @Operation(summary = "이메일 찾기", description = "이름과 전화번호로 가입된 이메일을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "이메일 찾기 성공",
+                    content = @Content(schema = @Schema(implementation = FindEmailResponse.class))),
+            @ApiResponse(responseCode = "400", description = "요청 값 검증 실패 또는 회원을 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "필드 검증 실패 메시지 또는 MemberNotFoundException.message"
+                }
+                """)))
+    })
     @PostMapping("/login/findEmail")
     public ResponseEntity<?> findEmail(
             @Valid @RequestBody FindEmailRequest request,
@@ -75,6 +105,23 @@ public class AuthController {
     }
 
     //로그인 API
+    @Operation(summary = "로그인", description = "이메일/비밀번호로 로그인하고, refreshToken은 httpOnly 쿠키로 발급됩니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그인 성공",
+                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+            @ApiResponse(responseCode = "400", description = "요청 값 검증 실패",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "필드 검증 실패 메시지"
+                }
+                """))),
+            @ApiResponse(responseCode = "401", description = "회원을 찾을 수 없거나 비밀번호 불일치",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "MemberNotFoundException.message 또는 PasswordMismatchException.message"
+                }
+                """)))
+    })
     @PostMapping("/login")
     public ResponseEntity<?> login (
             //DTO 검증을 위해서 Valid를 붙임. 검증이 끝나면 회원가입 처리 로직이 수행된다.
@@ -91,33 +138,43 @@ public class AuthController {
             //응답 반환
             return ResponseEntity.badRequest().body(new MessageResponse(errorMessage));
         }
-            try {
-                //서비스 호출하여 인증과 토큰생성 진행
-                LoginResponse response = authService.login(request);
+        try {
+            //서비스 호출하여 인증과 토큰생성 진행
+            LoginResponse response = authService.login(request);
 
-                // 토큰을 담은 쿠키를 생성
-                ResponseCookie responseCookie = ResponseCookie.from("refreshToken", response.refreshToken())
-                        .httpOnly(true) //XSS공격을 차단
-                        .secure(false) //HTTPS 통신에서만 쿠키를 전송할지 여부를 결정. 현재는 로컬 테스트를 위해 false로 설정함
-                        .path("/") //모든 경로에서 쿠키 사용 가능
-                        .maxAge(jwtTokenProvider.getRefreshTokenValidityInMilliseconds() / 1000) //쿠키 유효기간은 2주로 설정
-                        .sameSite("Strict")
-                        .build();
-                //쿠키를 함께 실어 반환
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
-                        .body(response);
+            // 토큰을 담은 쿠키를 생성
+            ResponseCookie responseCookie = ResponseCookie.from("refreshToken", response.refreshToken())
+                    .httpOnly(true) //XSS공격을 차단
+                    .secure(false) //HTTPS 통신에서만 쿠키를 전송할지 여부를 결정. 현재는 로컬 테스트를 위해 false로 설정함
+                    .path("/") //모든 경로에서 쿠키 사용 가능
+                    .maxAge(jwtTokenProvider.getRefreshTokenValidityInMilliseconds() / 1000) //쿠키 유효기간은 2주로 설정
+                    .sameSite("Strict")
+                    .build();
+            //쿠키를 함께 실어 반환
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                    .body(response);
 
-                //로그인 실패시 아래 코드 진행
-            } catch (MemberNotFoundException | PasswordMismatchException e){
-                //401번으로 오류메시지를 보낸다.
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new MessageResponse(e.getMessage())); //실패응답은 성공과 다른 DTO를 사용해 전송하도록 수정
-            }
+            //로그인 실패시 아래 코드 진행
+        } catch (MemberNotFoundException | PasswordMismatchException e){
+            //401번으로 오류메시지를 보낸다.
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse(e.getMessage())); //실패응답은 성공과 다른 DTO를 사용해 전송하도록 수정
+        }
 
     }
 
     //로그아웃
+    @Operation(summary = "로그아웃", description = "서버에 저장된 refreshToken을 무효화하고 쿠키를 파기합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그아웃 성공",
+                    content = @Content(schema = @Schema(implementation = MessageResponse.class),
+                            examples = @ExampleObject(value = """
+                {
+                  "message": "로그아웃 되었습니다"
+                }
+                """)))
+    })
     @PostMapping("/logout")
     public ResponseEntity<MessageResponse> logout(
             //쿠키에서 refreshToken을 꺼내옴. 없을 수도 있으니 required=false
@@ -144,6 +201,17 @@ public class AuthController {
     }
 
     //이메일 중복 확인 API
+    @Operation(summary = "이메일 중복 확인", description = "입력한 이메일이 이미 사용 중인지 확인합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "확인 성공 (사용 가능/불가능 여부는 응답의 isAvailable 참고)",
+                    content = @Content(schema = @Schema(implementation = EmailExistResponse.class))),
+            @ApiResponse(responseCode = "400", description = "요청 값 검증 실패",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "필드 검증 실패 메시지"
+                }
+                """)))
+    })
     @GetMapping("/emails/exists") //경로에는 쿼리 파라미터를 적지 않음
     public ResponseEntity<?> checkEmailExists(
             //파라미터 바인딩을 보장하기 위해 @ModelAttribute 사용
@@ -155,7 +223,7 @@ public class AuthController {
             //발생한 에러를 꺼내옴
             FieldError fieldError = bindingResult.getFieldError();
             //필드에러가 아니라 글로벌에러일수도 있으니 삼항연산자로 한차례 검사
-             //오류 원인에 따른 메시지를 담는 변수
+            //오류 원인에 따른 메시지를 담는 변수
             String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "잘못된 요청입니다.";
 
             //응답 반환
@@ -171,6 +239,23 @@ public class AuthController {
     }
 
     //회원가입 API
+    @Operation(summary = "회원가입", description = "새로운 회원 정보를 등록합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "회원가입 성공",
+                    content = @Content(schema = @Schema(implementation = SignUpResponse.class))),
+            @ApiResponse(responseCode = "400", description = "요청 값 검증 실패",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "필드 검증 실패 메시지"
+                }
+                """))),
+            @ApiResponse(responseCode = "409", description = "이메일 또는 전화번호 중복",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "DuplicateEmailException.message 또는 DuplicatePhoneNumberException.message"
+                }
+                """)))
+    })
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(
             //DTO 검증을 위해서 Valid를 붙임. 검증이 끝나면 회원가입 처리 로직이 수행된다.
