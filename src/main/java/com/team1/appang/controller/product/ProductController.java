@@ -45,7 +45,7 @@ public class ProductController {
             @ApiResponse(responseCode = "400", description = "page 또는 size 값이 허용 범위를 벗어남",
                     content = @Content(examples = @ExampleObject(value = """
                 {
-                  "message": "page는 0 이상이어야 합니다. 또는 size는 1~100 사이여야 합니다."
+                  "message": "page는 1 이상이어야 합니다. 또는 size는 1~100 사이여야 합니다."
                 }
                 """)))
     })
@@ -55,14 +55,14 @@ public class ProductController {
             @RequestParam(required = false) Long category,
             @Parameter(description = "정렬 기준: ranking, latest, priceLow, priceHigh 중 하나 (기본값 latest)", example = "latest")
             @RequestParam(required = false, defaultValue = "latest") String sort,
-            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0")
-            @RequestParam(defaultValue = "0") int page, //기본값은 0
+            @Parameter(description = "페이지 번호 (1부터 시작)", example = "0")
+            @RequestParam(defaultValue = "1") int page, //기본값은 1
             @Parameter(description = "페이지 크기 (1~100)", example = "10")
             @RequestParam(defaultValue = "10") int size //기본값은 10
     ){
         //page나 size에 이상한 값(1000000000000000000같이 DB에 부담을 주는 값)이 들어왔을때 대비
         //page, size값을 검증하고 문제가 있다면 400에러 반환
-        if(page < 0){
+        if(page < 1){
             return ResponseEntity.badRequest().body(new MessageResponse("page는 0 이상이어야 합니다."));
         }
         //허용 범위를 1이상 100이하를 기준으로 잡음
