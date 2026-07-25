@@ -4,8 +4,10 @@ import com.team1.appang.dto.search.SearchProductResponse;
 import com.team1.appang.dto.search.SearchResultData;
 import com.team1.appang.dto.search.SearchSortType;
 import com.team1.appang.entity.Product;
+import com.team1.appang.entity.RecommendKeyword;
 import com.team1.appang.repository.ProductRepository;
 import com.team1.appang.repository.ProductReviewRepository;
+import com.team1.appang.repository.RecommendKeywordRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class SearchService {
     private final ProductRepository productRepository;
     private final ProductReviewRepository productReviewRepository;
+    private final RecommendKeywordRepository recommendKeywordRepository;
 
     //상품 검색 로직
     public SearchResultData search(String keyword, String sortParam, int page, int size){
@@ -113,5 +116,27 @@ public class SearchService {
                 Math.round(rating[0] * 10) / 10.0, //예: 4.567 -> 45.67 -> 반올림 46 -> 4.6 (소수 첫째자리까지만 남김)
                 (long) rating[1]
         );
+    }
+
+    //검색 페이지 초기 화면의 추천 검색어 조회 로직 (최대 10개)
+    public List<String> getRecommendKeywords() {
+        return recommendKeywordRepository
+                //개수를 바꾼다면 여기서 조절하기
+                .findAllByOrderBySortOrderAsc(PageRequest.of(0, 10))
+                .stream()
+                .map(RecommendKeyword::getKeyword)
+                .toList();
+    }
+
+    //검색어 자동완성 로직
+    //입력값으로 시작하는 상품명을 최대 10개까지 반환
+    //검색어 추천과 개수를 맞췄으나 피그마 화면상에서는 11개이기에 개수 제안은 회의 필요
+    public List<String> getAutocompleteSuggestions(String keyword) {
+        //빈 문자열이면 DB에 쿼리 날릴 필요 없이 바로 빈 리스트 반환
+        if (keyword == null || keyword.isBlank()) {
+            return List.of();
+        }
+        //개수 수정은 여기서 고치면 됨
+        return productRepository.findNamesStartingWith(keyword, PageRequest.of(0, 10));
     }
 }

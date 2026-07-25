@@ -1,6 +1,8 @@
 package com.team1.appang.controller.search;
 
 import com.team1.appang.dto.MessageResponse;
+import com.team1.appang.dto.search.AutocompleteResponse;
+import com.team1.appang.dto.search.SearchInitResponse;
 import com.team1.appang.dto.search.SearchResponse;
 import com.team1.appang.dto.search.SearchResultData;
 import com.team1.appang.service.search.SearchService;
@@ -15,6 +17,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "검색", description = "상품 검색 관련 API")
 @RestController
@@ -84,5 +88,46 @@ public class SearchController {
 
         SearchResultData data = searchService.search(keyword, sort, page, size);
         return ResponseEntity.ok(new SearchResponse("검색 결과 조회가 완료되었습니다.", data));
+    }
+
+
+    //검색페이지 초기화면 API
+    @Operation(
+            summary = "검색 페이지 초기 화면",
+            description = "검색페이지 진입시 동적으로 변경되는 추천 검색어를 반환합니다. (최대 10개)"
+    )
+    @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = SearchInitResponse.class),
+                    examples = @ExampleObject(value = """
+            {
+              "message": "추천 검색어 조회가 완료되었습니다.",
+              "recommendKeywords": ["샐러드", "새벽배송 특가", "탄산수"]
+            }
+            """)))
+    @GetMapping("/init")
+    public ResponseEntity<?> getSearchInit() {
+        List<String> keywords = searchService.getRecommendKeywords();
+        return ResponseEntity.ok(new SearchInitResponse("추천 검색어 조회가 완료되었습니다.", keywords));
+    }
+
+    @Operation(
+            summary = "검색 키워드 자동 완성",
+            description = "사용자가 입력중인 문자열을 받아 그 문자열로 시작하는 상품명을 최대 10개까지 추천합니다."
+    )
+    @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = AutocompleteResponse.class),
+                    examples = @ExampleObject(value = """
+            {
+              "message": "자동완성 목록 조회가 완료되었습니다.",
+              "suggestions": ["바나나", "바나나칩", "바나나우유"]
+            }
+            """)))
+    @GetMapping("/autocomplete")
+    public ResponseEntity<?> getAutocomplete(
+            @Parameter(description = "사용자가 입력중인 검색어", example = "바")
+            @RequestParam String keyword
+    ) {
+        List<String> suggestions = searchService.getAutocompleteSuggestions(keyword);
+        return ResponseEntity.ok(new AutocompleteResponse("자동완성 목록 조회가 완료되었습니다.", suggestions));
     }
 }

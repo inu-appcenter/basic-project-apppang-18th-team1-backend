@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     //일반 정렬(최신순/가격순)용 쿼리. 카테고리 필터만 걸고, 실제 정렬은 Pageable의 Sort로 처리
@@ -46,4 +48,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             countQuery = "SELECT COUNT(p) FROM Product p WHERE p.name LIKE %:keyword%"
     )
     Page<Product> searchByWishlist(@Param("keyword") String keyword, Pageable pageable);
+
+    //자동완성용 쿼리. 입력값으로 "시작하는" 상품명만 조회 (중간에 포함된 건 제외)
+    //같은 이름의 상품이 여러 개 있을 수 있으므로 DISTINCT로 중복 제거
+    //Pageable로 최대 개수(10개)를 제한함
+    @Query("SELECT DISTINCT p.name FROM Product p WHERE p.name LIKE :keyword%")
+    List<String> findNamesStartingWith(@Param("keyword") String keyword, Pageable pageable);
 }
