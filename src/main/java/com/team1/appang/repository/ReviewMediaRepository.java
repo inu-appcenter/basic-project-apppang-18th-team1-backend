@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ReviewMediaRepository extends JpaRepository<ReviewMedia, Long> {
     List<ReviewMedia> findByProductReviewId(Long productReviewId);
+    List<ReviewMedia> findByProductReviewIdInOrderByIdAsc(List<Long> productReviewId);
 }
