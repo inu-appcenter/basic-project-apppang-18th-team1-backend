@@ -8,7 +8,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.util.Map;
 
@@ -59,24 +61,32 @@ public class MemberPasswordService {
     //Supabase Auth API를 호출하여 프론트가 보낸 토큰을 검증하는 메서드
     @SuppressWarnings("unchecked")
     private boolean verifySupabaseToken(String token, String requestEmail){
-        try{
-            String url = supabaseUrl + "/auth/v1/user";
+        String url = supabaseUrl + "/auth/v1/user";
+        Map<String, Object> body;
 
-            Map<String, Object> body = restClient.get()
+        try{
+            body = restClient.get()
                     .uri(url)
                     .header("Authorization", "Bearer " + token)
                     .header("apikey", supabaseAnonKey)
                     .retrieve()
                     .body(Map.class);
-
-            if (body != null && body.containsKey("email")) {
-                String tokenEmail = (String) body.get("email");
-                return tokenEmail.equalsIgnoreCase(requestEmail);
-            }
-
-        }catch (Exception e) {
-            log.warn("Supabase 토큰 검증 실패: email={}", requestEmail, e);
+        } catch (HttpClientErrorException e) {
+            //Supabase가 토큰 자체를 거부한 경우(만료/위조 등) - 정상적으로 발생 가능한 케이스
+            log.warn("Supabase가 토큰을 거부했습니다(만료 또는 잘못된 토큰): email={}, status={}", requestEmail, e.getStatusCode());
             return false;
+        } catch (RestClientException e) {
+            //5xx, 타임아웃, 연결 실패 등 - SUPABASE_URL/ANON_KEY 설정 또는 인프라 문제일 가능성이 높음
+            log.error("Supabase 연동에 실패했습니다. SUPABASE_URL/SUPABASE_ANON_KEY 설정과 네트워크 상태를 확인하세요: email={}", requestEmail, e);
+            return false;
+        } catch (Exception e) {
+            log.error("Supabase 응답 처리 중 예상치 못한 오류가 발생했습니다: email={}", requestEmail, e);
+            return false;
+        }
+
+        if (body != null && body.containsKey("email")) {
+            String tokenEmail = (String) body.get("email");
+            return requestEmail.equalsIgnoreCase(tokenEmail);
         }
         return false;
     }
