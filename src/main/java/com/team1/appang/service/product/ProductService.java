@@ -22,6 +22,8 @@ public class ProductService {
     public ProductListResponse getProducts(Long categoryId, ProductSortType sortType, int page, int size) {
 
         Page<Product> productPage;
+        //DB는 0부터 시작이므로
+        page = page -1;
 
         if (sortType == ProductSortType.RANKING) {
             //랭킹(찜 개수)은 쿼리 자체에 ORDER BY가 포함되어 있으므로 Sort 없는 Pageable을 사용
