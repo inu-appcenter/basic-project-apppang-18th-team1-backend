@@ -69,6 +69,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml"
                         ).permitAll() //Swagger 경로도 허가
+                        //매핑된 컨트롤러가 없는 요청은 Spring Boot가 /error로 내부 포워딩해서 404를 만드는데,
+                        ///error 자체가 permitAll이 아니면 그 포워딩이 시큐리티에 막혀 403으로 잘못 나감 -> 방지용
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()//그 외는 접근 차단. 이후 허가할 기능이 생기면 추가
                 )
                 //JwtFilter를 UsernamePasswordAuthenticationFilter 앞에 등록
