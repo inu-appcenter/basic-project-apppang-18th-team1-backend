@@ -1,6 +1,7 @@
 package com.team1.appang.repository;
 
 import com.team1.appang.entity.ProductReview;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +11,8 @@ import java.util.List;
 
 public interface ProductReviewRepository extends JpaRepository<ProductReview, Long> {
 
+    //상품별 리뷰 목록 페이지 조회 (리뷰 목록 조회 API에서 사용)
+    Page<ProductReview> findByProductId(Long productId, Pageable pageable);
 
     //평점평균과 리뷰수를 한번에 가져오는 쿼리문.
     //쿼리 메서드로 작성시 이름이 과다하게 길어져 직접 쿼리문 작성함
