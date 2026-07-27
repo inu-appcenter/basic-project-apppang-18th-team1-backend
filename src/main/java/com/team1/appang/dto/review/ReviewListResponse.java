@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public record ReviewListResponse(
         @Schema(description = "리뷰 목록")
@@ -19,9 +20,12 @@ public record ReviewListResponse(
         @Schema(description = "전체 페이지 수", example = "5")
         int totalPages
         ) {
-    public static ReviewListResponse from(Page<ProductReview> reviewPage, Map<Long, String> thumbnailByReviewId) {
+    public static ReviewListResponse from(Page<ProductReview> reviewPage, Map<Long, String> thumbnailByReviewId, Set<Long> helpfulReviewIds) {
         List<ReviewSummaryResponse> reviews = reviewPage.getContent().stream()
-                .map(review -> ReviewSummaryResponse.from(review, thumbnailByReviewId.get(review.getId())))
+                .map(review -> ReviewSummaryResponse.from(
+                        review,
+                        thumbnailByReviewId.get(review.getId()),
+                        helpfulReviewIds.contains(review.getId())))
                 .toList();
         return new ReviewListResponse(
                 reviews,

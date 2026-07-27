@@ -52,4 +52,12 @@ public class ProductReview {
         this.member = member;
         this.product = product;
     }
+
+    public void increaseHelpfulCount() {
+        this.helpfulCount++;
+    }
+
+    public void decreaseHelpfulCount() {
+        this.helpfulCount--;
+    }
 }
