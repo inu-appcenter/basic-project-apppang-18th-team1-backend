@@ -91,10 +91,10 @@ public class AuthService {
         //이메일로 사용자를 찾고 비밀번호를 검증함.
         // 이때 보안을 위해 메시지 내용은 동일한 내용으로 사용
         Member member = memberRepository.findByEmail(request.email())
-                .orElseThrow(()-> new MemberNotFoundException());
+                .orElseThrow(()-> new MemberNotFoundException("이메일 또는 비밀번호가 일치하지 않습니다"));
 
         if (!passwordEncoder.matches(request.password(), member.getPassword())){
-            throw new PasswordMismatchException();
+            throw new PasswordMismatchException("이메일 또는 비밀번호가 일치하지 않습니다");
         }
         //인증 성공시 토큰 발행
         String accessToken = jwtTokenProvider.createAccessToken(member.getEmail());
