@@ -6,6 +6,8 @@ import com.team1.appang.dto.review.ReviewCreateResponse;
 import com.team1.appang.dto.review.ReviewListResponse;
 import com.team1.appang.dto.review.ReviewMediaRequest;
 import com.team1.appang.dto.review.ReviewHelpfulToggleResponse;
+import com.team1.appang.dto.review.ReviewUpdateRequest;
+import com.team1.appang.dto.review.ReviewUpdateResponse;
 import com.team1.appang.entity.Member;
 import com.team1.appang.entity.Product;
 import com.team1.appang.entity.ProductReview;
@@ -13,6 +15,7 @@ import com.team1.appang.entity.ReviewHelpful;
 import com.team1.appang.entity.ReviewMedia;
 import com.team1.appang.exception.MemberNotFoundException;
 import com.team1.appang.exception.ProductNotFoundException;
+import com.team1.appang.exception.ReviewAccessDeniedException;
 import com.team1.appang.exception.ReviewNotFoundException;
 import com.team1.appang.repository.MemberRepository;
 import com.team1.appang.repository.ProductRepository;
@@ -92,7 +95,7 @@ public class ReviewService {
                             .map(reviewHelpful -> reviewHelpful.getProductReview().getId())
                             .collect(Collectors.toSet());
 
-            return ReviewListResponse.from(reviewPage, thumbnailByReviewId, helpfulReviewIds);
+            return ReviewListResponse.from(reviewPage, thumbnailByReviewId, helpfulReviewIds, memberId);
         }
 
     @Transactional
@@ -120,6 +123,19 @@ public class ReviewService {
             review.increaseHelpfulCount();
             return ReviewHelpfulToggleResponse.added(review.getHelpfulCount());
         }
+    }
+
+    @Transactional
+    public ReviewUpdateResponse updateReview(Long reviewId, Long memberId, ReviewUpdateRequest request) {
+        ProductReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(ReviewNotFoundException::new);
+
+        if (!review.getMember().getId().equals(memberId)) {
+            throw new ReviewAccessDeniedException();
+        }
+
+        review.update(request.rating(), request.content());
+        return new ReviewUpdateResponse("리뷰가 수정되었습니다", review.getId());
     }
     }
 
