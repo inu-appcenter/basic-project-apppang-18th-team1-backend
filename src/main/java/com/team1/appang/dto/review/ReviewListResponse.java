@@ -20,12 +20,13 @@ public record ReviewListResponse(
         @Schema(description = "전체 페이지 수", example = "5")
         int totalPages
         ) {
-    public static ReviewListResponse from(Page<ProductReview> reviewPage, Map<Long, String> thumbnailByReviewId, Set<Long> helpfulReviewIds) {
+    public static ReviewListResponse from(Page<ProductReview> reviewPage, Map<Long, String> thumbnailByReviewId, Set<Long> helpfulReviewIds, Long memberId) {
         List<ReviewSummaryResponse> reviews = reviewPage.getContent().stream()
                 .map(review -> ReviewSummaryResponse.from(
                         review,
                         thumbnailByReviewId.get(review.getId()),
-                        helpfulReviewIds.contains(review.getId())))
+                        helpfulReviewIds.contains(review.getId()),
+                        memberId != null && review.getMember().getId().equals(memberId)))
                 .toList();
         return new ReviewListResponse(
                 reviews,

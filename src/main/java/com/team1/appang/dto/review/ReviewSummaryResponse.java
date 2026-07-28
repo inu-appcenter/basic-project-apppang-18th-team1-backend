@@ -14,11 +14,13 @@ public record ReviewSummaryResponse(
         int helpfulCount,
         @Schema(description = "현재 로그인한 사용자의 도움돼요 여부 (비로그인 시 항상 false)", example = "false")
         boolean isHelpful,
+        @Schema(description = "현재 로그인한 사용자가 작성한 리뷰인지 여부 (비로그인 시 항상 false)", example = "false")
+        boolean isMine,
         String thumbnailUrl,
         LocalDateTime createdAt
 
         ) {
-    public static ReviewSummaryResponse from(ProductReview review, String thumbnailUrl, boolean isHelpful){
+    public static ReviewSummaryResponse from(ProductReview review, String thumbnailUrl, boolean isHelpful, boolean isMine){
         return new ReviewSummaryResponse(
                 review.getId(),
                 review.getMember().getNickname(),
@@ -26,6 +28,7 @@ public record ReviewSummaryResponse(
                 review.getContent(),
                 review.getHelpfulCount(),
                 isHelpful,
+                isMine,
                 thumbnailUrl,
                 review.getCreatedAt()
                 );

@@ -5,8 +5,11 @@ import com.team1.appang.dto.review.ReviewCreateRequest;
 import com.team1.appang.dto.review.ReviewCreateResponse;
 import com.team1.appang.dto.review.ReviewHelpfulToggleResponse;
 import com.team1.appang.dto.review.ReviewListResponse;
+import com.team1.appang.dto.review.ReviewUpdateRequest;
+import com.team1.appang.dto.review.ReviewUpdateResponse;
 import com.team1.appang.exception.MemberNotFoundException;
 import com.team1.appang.exception.ProductNotFoundException;
+import com.team1.appang.exception.ReviewAccessDeniedException;
 import com.team1.appang.exception.ReviewNotFoundException;
 import com.team1.appang.service.auth.AuthService;
 import com.team1.appang.service.review.ReviewService;
@@ -138,6 +141,51 @@ public class ReviewController {
         try {
             ReviewHelpfulToggleResponse response = reviewService.toggleHelpful(reviewId, memberId);
             return ResponseEntity.ok(response);
+        } catch (ReviewNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "리뷰 수정", description = "본인이 작성한 리뷰의 평점/내용을 수정합니다. 로그인이 필요합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "수정 성공",
+                    content = @Content(schema = @Schema(implementation = ReviewUpdateResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인이 필요함",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "로그인이 필요합니다."
+                }
+                """))),
+            @ApiResponse(responseCode = "403", description = "본인이 작성한 리뷰가 아님",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "ReviewAccessDeniedException.message"
+                }
+                """))),
+            @ApiResponse(responseCode = "404", description = "리뷰를 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "ReviewNotFoundException.message"
+                }
+                """)))
+    })
+    @PatchMapping("/{reviewId}")
+    public ResponseEntity<?> updateReview(
+            @Parameter(description = "리뷰가 속한 상품 id", example = "1")
+            @PathVariable Long productId,
+            @Parameter(description = "수정할 리뷰 id", example = "1")
+            @PathVariable Long reviewId,
+            @RequestBody ReviewUpdateRequest request) {
+        Long memberId = authService.getCurrentMemberId();
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("로그인이 필요합니다."));
+        }
+        try {
+            ReviewUpdateResponse response = reviewService.updateReview(reviewId, memberId, request);
+            return ResponseEntity.ok(response);
+        } catch (ReviewAccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (ReviewNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
         }
