@@ -28,7 +28,8 @@ public record ProductSummaryResponse(
                 product.getBrand().getName(),
                 product.getName(),
                 product.getOriginPrice(),
-                product.getDiscountRate(),
+                //discountRate는 저장값이 아니라 정가/판매가로부터 매번 계산
+                Math.round((product.getOriginPrice() - product.getSalePrice()) * 100f / product.getOriginPrice()),
                 product.getSalePrice(),
                 product.getMainImageUrl(),
                 product.getUnitPriceText()

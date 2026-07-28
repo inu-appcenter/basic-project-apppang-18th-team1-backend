@@ -14,7 +14,6 @@ public class Product {
     @Id
     private Long id;
 
-    private int discountRate;
     private String unitPriceText;
 
     @Lob
@@ -45,10 +44,9 @@ public class Product {
     private Brand brand;
 
     @Builder
-    public Product(int discountRate, String unitPriceText, String detailImages, String subImages,
+    public Product(String unitPriceText, String detailImages, String subImages,
                    String name, int originPrice, int salePrice, String mainImageUrl,
                    Category category, Brand brand) {
-        this.discountRate = discountRate;
         this.unitPriceText = unitPriceText;
         this.detailImages = detailImages;
         this.subImages = subImages;

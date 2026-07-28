@@ -93,7 +93,9 @@ public class CartService {
         int originalPrice = product.getOriginPrice() + option.getAdditionalPrice();
         int salePrice = product.getSalePrice() + option.getAdditionalPrice();
 
-        CartItemPrice price = new CartItemPrice(originalPrice, product.getDiscountRate(), salePrice);
+        //discountRate는 저장값이 아니라 정가/판매가로부터 매번 계산
+        int discountRate = Math.round((originalPrice - salePrice) * 100f / originalPrice);
+        CartItemPrice price = new CartItemPrice(originalPrice, discountRate, salePrice);
 
         String estimatedArrivalDate = LocalDate.now().plusDays(1).toString();
 

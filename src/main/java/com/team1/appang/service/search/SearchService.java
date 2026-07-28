@@ -110,7 +110,8 @@ public class SearchService {
                 product.getMainImageUrl(),
                 product.getName(),
                 product.getOriginPrice(),
-                product.getDiscountRate(),
+                //discountRate는 저장값이 아니라 정가/판매가로부터 매번 계산
+                Math.round((product.getOriginPrice() - product.getSalePrice()) * 100f / product.getOriginPrice()),
                 product.getSalePrice(),
                 product.getUnitPriceText(),
                 Math.round(rating[0] * 10) / 10.0, //예: 4.567 -> 45.67 -> 반올림 46 -> 4.6 (소수 첫째자리까지만 남김)

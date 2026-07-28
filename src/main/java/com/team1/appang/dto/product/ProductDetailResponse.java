@@ -80,7 +80,8 @@ public record ProductDetailResponse(
                 BrandResponse.from(product.getBrand()),
                 product.getName(),
                 product.getOriginPrice(),
-                product.getDiscountRate(),
+                //discountRate는 저장값이 아니라 정가/판매가로부터 매번 계산
+                Math.round((product.getOriginPrice() - product.getSalePrice()) * 100f / product.getOriginPrice()),
                 product.getSalePrice(),
                 product.getUnitPriceText(),
                 options.stream().map(ProductOptionResponse::from).toList(),
