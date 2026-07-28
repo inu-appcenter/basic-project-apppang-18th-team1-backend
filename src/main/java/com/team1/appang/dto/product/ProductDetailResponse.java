@@ -25,8 +25,6 @@ public record ProductDetailResponse(
         int discountRate,
         @Schema(description = "판매가", example = "45000")
         int salePrice,
-        @Schema(description = "단가 표시 텍스트", example = "100ml당 4,500원")
-        String unitPriceText,
         @Schema(description = "구매 가능한 옵션 목록")
         List<ProductOptionResponse> variants,
         @Schema(description = "상세 설명 이미지 목록")
@@ -83,7 +81,6 @@ public record ProductDetailResponse(
                 //discountRate는 저장값이 아니라 정가/판매가로부터 매번 계산
                 Math.round((product.getOriginPrice() - product.getSalePrice()) * 100f / product.getOriginPrice()),
                 product.getSalePrice(),
-                product.getUnitPriceText(),
                 options.stream().map(ProductOptionResponse::from).toList(),
                 ImageUtils.parseImageList(product.getDetailImages())
         );

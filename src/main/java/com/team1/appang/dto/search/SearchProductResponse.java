@@ -16,8 +16,6 @@ public record SearchProductResponse(
         int discountRate,
         @Schema(description = "판매가", example = "45000")
         int salePrice,
-        @Schema(description = "단가 표시 텍스트", example = "100ml당 4,500원")
-        String unitPriceText,
         @Schema(description = "평균 평점 (리뷰가 없으면 0)", example = "3.5")
         double rating,
         @Schema(description = "리뷰 개수", example = "128")

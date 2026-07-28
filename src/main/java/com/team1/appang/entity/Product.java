@@ -14,8 +14,6 @@ public class Product {
     @Id
     private Long id;
 
-    private String unitPriceText;
-
     @Lob
     private String detailImages; //상세 이미지, 화면을 아래로 내렸을 때 뜨는 상세 이미지 (JSON 배열 문자열)
 
@@ -44,10 +42,9 @@ public class Product {
     private Brand brand;
 
     @Builder
-    public Product(String unitPriceText, String detailImages, String subImages,
+    public Product(String detailImages, String subImages,
                    String name, int originPrice, int salePrice, String mainImageUrl,
                    Category category, Brand brand) {
-        this.unitPriceText = unitPriceText;
         this.detailImages = detailImages;
         this.subImages = subImages;
         this.name = name;

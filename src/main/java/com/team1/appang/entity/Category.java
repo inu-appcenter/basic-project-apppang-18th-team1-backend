@@ -19,15 +19,8 @@ public class Category {
     @Column(nullable = false, unique = true)
     private String name;
 
-    private String iconImageUrl;
-
-    //정렬순서를 nullable로 할지는 논의 필요
-    private Long sortOrder;
-
     @Builder
-    public Category(String name, String iconImageUrl, Long sortOrder) {
+    public Category(String name) {
         this.name = name;
-        this.iconImageUrl = iconImageUrl;
-        this.sortOrder = sortOrder;
     }
 }

@@ -18,9 +18,7 @@ public record ProductSummaryResponse(
         @Schema(description = "판매가", example = "45000")
         int salePrice,
         @Schema(description = "대표 이미지 URL")
-        String mainImageUrl,
-        @Schema(description = "단가 표시 텍스트", example = "100ml당 4,500원")
-        String unitPriceText
+        String mainImageUrl
 ) {
     public static ProductSummaryResponse from(com.team1.appang.entity.Product product) {
         return new ProductSummaryResponse(
@@ -31,8 +29,7 @@ public record ProductSummaryResponse(
                 //discountRate는 저장값이 아니라 정가/판매가로부터 매번 계산
                 Math.round((product.getOriginPrice() - product.getSalePrice()) * 100f / product.getOriginPrice()),
                 product.getSalePrice(),
-                product.getMainImageUrl(),
-                product.getUnitPriceText()
+                product.getMainImageUrl()
         );
     }
 }

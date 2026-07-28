@@ -48,7 +48,6 @@ public class SearchController {
                         "originalPrice": 15000,
                         "discountRate": 20,
                         "salePrice": 12000,
-                        "unitPriceText": "10g당 120원",
                         "rating": 4.5,
                         "reviewCount": 128
                       }
