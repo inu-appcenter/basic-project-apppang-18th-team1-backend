@@ -53,6 +53,11 @@ public class ProductReview {
         this.product = product;
     }
 
+    public void update(int rating, String content) {
+        this.rating = rating;
+        this.content = content;
+    }
+
     public void increaseHelpfulCount() {
         this.helpfulCount++;
     }
