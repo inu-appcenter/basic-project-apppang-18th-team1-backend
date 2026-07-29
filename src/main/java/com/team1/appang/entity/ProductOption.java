@@ -56,4 +56,14 @@ public class ProductOption {
         this.isPopular = isPopular;
         this.product = product;
     }
+
+    //주문 생성 시 재고 차감. 재고 부족 여부는 Service에서 미리 검증
+    public void decreaseStock(int quantity) {
+        this.stockQuantity -= quantity;
+    }
+
+    //주문 취소 시 재고 복구
+    public void increaseStock(int quantity) {
+        this.stockQuantity += quantity;
+    }
 }

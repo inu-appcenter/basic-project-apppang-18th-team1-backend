@@ -49,6 +49,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     )
     Page<Product> searchByWishlist(@Param("keyword") String keyword, Pageable pageable);
 
+    //인기상품(메인 배너용) 조회 쿼리. 취소된 주문은 판매량 집계에서 제외
+    //판매량이 0인 상품은 배너에 노출할 이유가 없으므로 INNER JOIN(=집계 대상만) 사용
+    @Query("SELECT oi.productOption.product FROM OrderItem oi " +
+            "WHERE oi.order.orderStatus <> com.team1.appang.entity.OrderStatus.CANCELLED " +
+            "GROUP BY oi.productOption.product " +
+            "ORDER BY SUM(oi.quantity) DESC")
+    List<Product> findTopSellingProducts(Pageable pageable);
+
     //자동완성용 쿼리. 입력값으로 "시작하는" 상품명만 조회 (중간에 포함된 건 제외)
     //같은 이름의 상품이 여러 개 있을 수 있으므로 DISTINCT로 중복 제거
     //Pageable로 최대 개수(10개)를 제한함

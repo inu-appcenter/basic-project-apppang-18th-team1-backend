@@ -38,6 +38,7 @@ public class ProductService {
 
         return ProductListResponse.from(productPage);
     }
+
     //정렬기준 Enum를 실제 JPA Sort 객체로 변환하는 메서드
     //RANKING은 예외처리를 함
     private Sort resolveSort(ProductSortType sortType) {
