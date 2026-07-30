@@ -5,6 +5,7 @@ import com.team1.appang.dto.review.ReviewCreateRequest;
 import com.team1.appang.dto.review.ReviewCreateResponse;
 import com.team1.appang.dto.review.ReviewHelpfulToggleResponse;
 import com.team1.appang.dto.review.ReviewListResponse;
+import com.team1.appang.dto.review.ReviewOwnershipResponse;
 import com.team1.appang.dto.review.ReviewUpdateRequest;
 import com.team1.appang.dto.review.ReviewUpdateResponse;
 import com.team1.appang.exception.MemberNotFoundException;
@@ -203,6 +204,42 @@ public class ReviewController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (ReviewNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "리뷰 작성자 본인 확인", description = "수정하려는 리뷰가 본인이 작성한 리뷰인지 확인합니다. 로그인이 필요합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "확인 성공",
+                    content = @Content(schema = @Schema(implementation = ReviewOwnershipResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인이 필요함",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "로그인이 필요합니다."
+                }
+                """))),
+            @ApiResponse(responseCode = "404", description = "리뷰를 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "ReviewNotFoundException.message"
+                }
+                """)))
+    })
+    @GetMapping("/{reviewId}/ownership")
+    public ResponseEntity<?> checkOwnership(
+            @Parameter(description = "리뷰가 속한 상품 id", example = "1")
+            @PathVariable Long productId,
+            @Parameter(description = "본인 여부를 확인할 리뷰 id", example = "1")
+            @PathVariable Long reviewId) {
+        Long memberId = authService.getCurrentMemberId();
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("로그인이 필요합니다."));
+        }
+        try {
+            ReviewOwnershipResponse response = reviewService.checkOwnership(reviewId, memberId);
+            return ResponseEntity.ok(response);
+        } catch (ReviewNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("리뷰를 찾을 수 없습니다"));
         }
     }
 

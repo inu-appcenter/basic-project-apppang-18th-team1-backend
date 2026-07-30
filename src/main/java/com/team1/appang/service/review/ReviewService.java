@@ -6,6 +6,7 @@ import com.team1.appang.dto.review.ReviewCreateResponse;
 import com.team1.appang.dto.review.ReviewListResponse;
 import com.team1.appang.dto.review.ReviewMediaRequest;
 import com.team1.appang.dto.review.ReviewHelpfulToggleResponse;
+import com.team1.appang.dto.review.ReviewOwnershipResponse;
 import com.team1.appang.dto.review.ReviewUpdateRequest;
 import com.team1.appang.dto.review.ReviewUpdateResponse;
 import com.team1.appang.entity.Member;
@@ -136,6 +137,14 @@ public class ReviewService {
 
         review.update(request.rating(), request.content());
         return new ReviewUpdateResponse("리뷰가 수정되었습니다", review.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public ReviewOwnershipResponse checkOwnership(Long reviewId, Long memberId) {
+        ProductReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(ReviewNotFoundException::new);
+
+        return new ReviewOwnershipResponse(review.getMember().getId().equals(memberId));
     }
     }
 
