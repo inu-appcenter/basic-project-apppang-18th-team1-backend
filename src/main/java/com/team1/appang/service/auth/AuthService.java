@@ -150,6 +150,13 @@ public class AuthService {
         return savedMember.getId();
     }
 
+    //내 프로필 조회 로직
+    public MemberProfileResponse getMemberProfile(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(MemberNotFoundException::new);
+        return MemberProfileResponse.from(member);
+    }
+
     //로그인한 회원의 id를 받환받아 존재하는 회원인지 검증
     //비로그인 상태라면 null
     public Long getCurrentMemberId() {

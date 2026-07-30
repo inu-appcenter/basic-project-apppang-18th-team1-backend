@@ -284,4 +284,41 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
         }
     }
+
+    //내 프로필 조회 API
+    //로그인 상태에서만 호출 가능. 비로그인 시 401 반환
+    @Operation(summary = "내 프로필 조회", description = "로그인한 회원의 이름, 닉네임, 이메일, 전화번호를 조회합니다. 로그인이 필요합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = MemberProfileResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인이 필요함",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "로그인이 필요합니다."
+                }
+                """))),
+            @ApiResponse(responseCode = "404", description = "회원을 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "MemberNotFoundException.message"
+                }
+                """)))
+    })
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyProfile() {
+        Long memberId = authService.getCurrentMemberId();
+
+        //로그인하지 않은 상태면 401로 막음
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("로그인이 필요합니다."));
+        }
+
+        try {
+            MemberProfileResponse response = authService.getMemberProfile(memberId);
+            return ResponseEntity.ok(response);
+        } catch (MemberNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        }
+    }
 }
