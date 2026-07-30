@@ -21,9 +21,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -39,6 +42,12 @@ public class ReviewController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "작성 성공",
                     content = @Content(schema = @Schema(implementation = ReviewCreateResponse.class))),
+            @ApiResponse(responseCode = "400", description = "요청 값이 유효하지 않음",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "리뷰 내용을 작성해주세요."
+                }
+                """))),
             @ApiResponse(responseCode = "401", description = "로그인이 필요함",
                     content = @Content(examples = @ExampleObject(value = """
                 {
@@ -56,8 +65,14 @@ public class ReviewController {
     public ResponseEntity<?> createReview(
             @Parameter(description = "리뷰를 작성할 상품 id", example = "1")
             @PathVariable Long productId,
-            @RequestBody ReviewCreateRequest request
+            @Valid @RequestBody ReviewCreateRequest request,
+            BindingResult bindingResult
             ){
+        if (bindingResult.hasErrors()) {
+            FieldError fieldError = bindingResult.getFieldError();
+            String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "잘못된 요청입니다.";
+            return ResponseEntity.badRequest().body(new MessageResponse(errorMessage));
+        }
         Long memberId = authService.getCurrentMemberId();
         if (memberId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
