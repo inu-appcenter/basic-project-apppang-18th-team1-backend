@@ -1,5 +1,7 @@
 package com.team1.appang.service.product;
 
+import com.team1.appang.dto.product.ProductSummaryResponse;
+import com.team1.appang.dto.product.WishlistResponse;
 import com.team1.appang.dto.product.WishlistToggleResponse;
 import com.team1.appang.entity.Member;
 import com.team1.appang.entity.Product;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 //찜하기 토글을 전담하는 서비스
@@ -49,5 +52,14 @@ public class WishlistService {
             wishlistRepository.save(wishlist);
             return WishlistToggleResponse.added();
         }
+    }
+
+    //내 위시리스트 목록 조회
+    public WishlistResponse getWishlist(Long memberId) {
+        List<ProductSummaryResponse> products = wishlistRepository.findByMemberIdWithProduct(memberId).stream()
+                .map(wishlist -> ProductSummaryResponse.from(wishlist.getProduct()))
+                .toList();
+
+        return new WishlistResponse("위시리스트를 조회했습니다.", products);
     }
 }

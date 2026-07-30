@@ -4,6 +4,7 @@ import com.team1.appang.dto.MessageResponse;
 import com.team1.appang.dto.product.ProductDetailResponse;
 import com.team1.appang.dto.product.ProductListResponse;
 import com.team1.appang.dto.product.ProductSortType;
+import com.team1.appang.dto.product.WishlistResponse;
 import com.team1.appang.dto.product.WishlistToggleResponse;
 import com.team1.appang.exception.MemberNotFoundException;
 import com.team1.appang.exception.ProductNotFoundException;
@@ -138,5 +139,32 @@ public class ProductController {
         } catch (ProductNotFoundException | MemberNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
         }
+    }
+
+    //내 위시리스트 목록 조회 API
+    //로그인 상태에서만 호출 가능. 비로그인 시 401 반환
+    @Operation(summary = "위시리스트 목록 조회", description = "로그인한 회원이 찜한 상품 목록을 찜한 순서(최신순)로 조회합니다. 로그인이 필요합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = WishlistResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인이 필요함",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "로그인이 필요합니다."
+                }
+                """)))
+    })
+    @GetMapping("/wishlist")
+    public ResponseEntity<?> getWishlist() {
+        Long memberId = authService.getCurrentMemberId();
+
+        //로그인하지 않은 상태면 401로 막음
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("로그인이 필요합니다."));
+        }
+
+        WishlistResponse response = wishlistService.getWishlist(memberId);
+        return ResponseEntity.ok(response);
     }
 }
