@@ -129,14 +129,15 @@ public class SearchService {
     }
 
     //검색어 자동완성 로직
-    //입력값으로 시작하는 상품명을 최대 10개까지 반환
+    //입력값을 포함하는 상품명을 최대 10개까지 반환
     //검색어 추천과 개수를 맞췄으나 피그마 화면상에서는 11개이기에 개수 제안은 회의 필요
     public List<String> getAutocompleteSuggestions(String keyword) {
-        //빈 문자열이면 DB에 쿼리 날릴 필요 없이 바로 빈 리스트 반환
-        if (keyword == null || keyword.isBlank()) {
+        //빈 문자열이거나 2글자 미만이면 DB에 쿼리 날릴 필요 없이 바로 빈 리스트 반환
+        //한 글자만으로는 매칭되는 상품이 너무 많아 추천의 의미가 없음
+        if (keyword == null || keyword.strip().length() < 2) {
             return List.of();
         }
         //개수 수정은 여기서 고치면 됨
-        return productRepository.findNamesStartingWith(keyword, PageRequest.of(0, 10));
+        return productRepository.findNamesContaining(keyword, PageRequest.of(0, 10));
     }
 }
