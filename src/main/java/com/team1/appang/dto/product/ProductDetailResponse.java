@@ -53,19 +53,19 @@ public record ProductDetailResponse(
             int price,
             @Schema(description = "배송 타입 표시명", example = "로켓배송")
             String shippingType,
-            @Schema(description = "절약 금액 (상품 할인 금액 - 옵션 추가 금액)", example = "1000")
+            @Schema(description = "절약 금액 (상품 정가 - 판매가)", example = "1000")
             int saveAmount,
             @Schema(description = "인기 옵션 여부", example = "true")
             boolean isPopular
     ) {
-        //saveAmount는 저장값이 아니라 상품의 할인 금액(정가-판매가)에서 옵션 추가 금액을 뺀 값으로 매번 계산
+        //saveAmount는 저장값이 아니라 상품의 정가-판매가로 매번 계산 (모든 옵션에 동일하게 적용)
         public static ProductOptionResponse from(ProductOption option, int productSaveAmount) {
             return new ProductOptionResponse(
                     option.getId(),
                     option.getOptionName() + " " + option.getOptionValue(), //예: "색상 화이트+그레이"
                     option.getAdditionalPrice(),
                     option.getShippingType() != null ? option.getShippingType().getDisplayName() : null,
-                    productSaveAmount - option.getAdditionalPrice(),
+                    productSaveAmount,
                     option.isPopular()
             );
         }
