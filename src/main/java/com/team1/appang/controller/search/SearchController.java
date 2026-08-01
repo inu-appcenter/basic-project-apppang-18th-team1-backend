@@ -111,7 +111,7 @@ public class SearchController {
 
     @Operation(
             summary = "검색 키워드 자동 완성",
-            description = "사용자가 입력중인 문자열을 받아 그 문자열로 시작하는 상품명을 최대 10개까지 추천합니다."
+            description = "사용자가 입력중인 문자열을 받아 그 문자열을 포함하는 상품명을 최대 10개까지 추천합니다. 입력값이 2글자 미만이면 빈 목록을 반환합니다."
     )
     @ApiResponse(responseCode = "200", description = "조회 성공",
             content = @Content(schema = @Schema(implementation = AutocompleteResponse.class),
