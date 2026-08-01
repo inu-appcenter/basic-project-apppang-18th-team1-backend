@@ -3,11 +3,17 @@ package com.team1.appang.service.order;
 import com.team1.appang.dto.order.*;
 import com.team1.appang.entity.*;
 import com.team1.appang.exception.EmptyCartException;
+import com.team1.appang.exception.InvalidQuantityException;
+import com.team1.appang.exception.MemberNotFoundException;
 import com.team1.appang.exception.OrderCancelNotAllowedException;
 import com.team1.appang.exception.OrderNotFoundException;
 import com.team1.appang.exception.OutOfStockException;
+import com.team1.appang.exception.ProductOptionMismatchException;
+import com.team1.appang.exception.ProductOptionNotFoundException;
 import com.team1.appang.repository.CartItemRepository;
+import com.team1.appang.repository.MemberRepository;
 import com.team1.appang.repository.OrderRepository;
+import com.team1.appang.repository.ProductOptionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +26,8 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final CartItemRepository cartItemRepository;
+    private final MemberRepository memberRepository;
+    private final ProductOptionRepository productOptionRepository;
 
     //장바구니에서 선택된(isSelected) 상품들로 주문을 생성하는 로직 (체크아웃)
     @Transactional
@@ -71,6 +79,56 @@ public class OrderService {
 
         orderRepository.save(order);
         cartItemRepository.deleteAll(selectedItems);
+
+        return toOrderCreateData(order);
+    }
+
+    //장바구니를 거치지 않고 상품 하나를 바로 주문하는 로직 (바로구매)
+    @Transactional
+    public OrderCreateData buyNow(Long memberId, Long productId, Long optionId, int quantity) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(MemberNotFoundException::new);
+
+        if (quantity <= 0) {
+            throw new InvalidQuantityException();
+        }
+
+        ProductOption option = productOptionRepository.findById(optionId)
+                .orElseThrow(ProductOptionNotFoundException::new);
+
+        //요청받은 상품 id가 실제 옵션이 속한 상품과 일치하는지 검증 (CartService.addOrUpdateCartItem과 동일한 검증)
+        if (!option.getProduct().getId().equals(productId)) {
+            throw new ProductOptionMismatchException("상품과 옵션 정보가 일치하지 않습니다.");
+        }
+
+        if (option.getStockQuantity() < quantity) {
+            throw new OutOfStockException(option.getProduct().getName() + "의 재고가 부족합니다.");
+        }
+
+        int originUnitPrice = option.getProduct().getOriginPrice() + option.getAdditionalPrice();
+        int saleUnitPrice = option.getProduct().getSalePrice() + option.getAdditionalPrice();
+        int totalProductPrice = originUnitPrice * quantity;
+        int totalDiscountPrice = (originUnitPrice - saleUnitPrice) * quantity;
+        int finalPaymentPrice = totalProductPrice - totalDiscountPrice;
+
+        Order order = Order.builder()
+                .totalProductPrice(totalProductPrice)
+                .totalDiscountPrice(totalDiscountPrice)
+                .finalPaymentPrice(finalPaymentPrice)
+                .orderStatus(OrderStatus.ORDERED)
+                .member(member)
+                .build();
+
+        option.decreaseStock(quantity);
+
+        OrderItem orderItem = OrderItem.builder()
+                .quantity(quantity)
+                .price(saleUnitPrice)
+                .productOption(option)
+                .build();
+        order.addItem(orderItem);
+
+        orderRepository.save(order);
 
         return toOrderCreateData(order);
     }
