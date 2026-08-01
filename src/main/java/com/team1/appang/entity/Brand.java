@@ -20,9 +20,13 @@ public class Brand {
 
     private String logoUrl;
 
+    //영문/한글 등 검색용 별칭. 여러 개면 쉼표로 구분해 저장 (예: "apple, 애플")
+    private String alias;
+
     @Builder
-    public Brand(String name, String logoUrl) {
+    public Brand(String name, String logoUrl, String alias) {
         this.name = name;
         this.logoUrl = logoUrl;
+        this.alias = alias;
     }
 }

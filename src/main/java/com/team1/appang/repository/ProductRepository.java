@@ -33,8 +33,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             Pageable pageable
     );
 
-    //일반 정렬 검색용 쿼리. 키워드로 상품명만 필터링하고 정렬은 Pageable의 Sort로 처리
-    @Query("SELECT p FROM Product p WHERE p.name LIKE %:keyword%")
+    //일반 정렬 검색용 쿼리. 키워드로 상품명/브랜드명/브랜드 별칭(alias)을 필터링하고 정렬은 Pageable의 Sort로 처리
+    @Query("SELECT p FROM Product p WHERE p.name LIKE %:keyword% " +
+            "OR p.brand.name LIKE %:keyword% OR p.brand.alias LIKE %:keyword%")
     Page<Product> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
     //랭킹(찜 개수) 정렬용 검색 쿼리. Wishlist를 LEFT JOIN하여 상품별 찜 개수를 세고 내림차순 정렬
@@ -43,9 +44,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query(
             value = "SELECT p FROM Product p LEFT JOIN Wishlist w ON w.product = p " +
                     "WHERE p.name LIKE %:keyword% " +
+                    "OR p.brand.name LIKE %:keyword% OR p.brand.alias LIKE %:keyword% " +
                     "GROUP BY p " +
                     "ORDER BY COUNT(w) DESC",
-            countQuery = "SELECT COUNT(p) FROM Product p WHERE p.name LIKE %:keyword%"
+            countQuery = "SELECT COUNT(p) FROM Product p WHERE p.name LIKE %:keyword% " +
+                    "OR p.brand.name LIKE %:keyword% OR p.brand.alias LIKE %:keyword%"
     )
     Page<Product> searchByWishlist(@Param("keyword") String keyword, Pageable pageable);
 
@@ -57,9 +60,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "ORDER BY SUM(oi.quantity) DESC")
     List<Product> findTopSellingProducts(Pageable pageable);
 
-    //자동완성용 쿼리. 입력값으로 "시작하는" 상품명만 조회 (중간에 포함된 건 제외)
+    //자동완성용 쿼리. 입력값으로 "시작하는" 상품명/브랜드명/브랜드 별칭을 가진 상품만 조회 (중간에 포함된 건 제외)
     //같은 이름의 상품이 여러 개 있을 수 있으므로 DISTINCT로 중복 제거
     //Pageable로 최대 개수(10개)를 제한함
-    @Query("SELECT DISTINCT p.name FROM Product p WHERE p.name LIKE :keyword%")
+    @Query("SELECT DISTINCT p.name FROM Product p WHERE p.name LIKE :keyword% " +
+            "OR p.brand.name LIKE :keyword% OR p.brand.alias LIKE :keyword%")
     List<String> findNamesStartingWith(@Param("keyword") String keyword, Pageable pageable);
 }
