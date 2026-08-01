@@ -2,6 +2,8 @@ package com.team1.appang.controller.order;
 
 import com.team1.appang.dto.MessageResponse;
 import com.team1.appang.dto.order.*;
+import com.team1.appang.exception.AddressAccessDeniedException;
+import com.team1.appang.exception.AddressNotFoundException;
 import com.team1.appang.exception.EmptyCartException;
 import com.team1.appang.exception.InvalidQuantityException;
 import com.team1.appang.exception.MemberNotFoundException;
@@ -50,10 +52,22 @@ public class OrderController {
                 {
                   "message": "로그인이 필요합니다."
                 }
+                """))),
+            @ApiResponse(responseCode = "403", description = "본인의 배송지가 아님",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "AddressAccessDeniedException.message"
+                }
+                """))),
+            @ApiResponse(responseCode = "404", description = "배송지를 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "AddressNotFoundException.message"
+                }
                 """)))
     })
     @PostMapping
-    public ResponseEntity<?> createOrder() {
+    public ResponseEntity<?> createOrder(@RequestBody OrderCreateRequest request) {
         Long memberId = authService.getCurrentMemberId();
         if (memberId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -61,10 +75,14 @@ public class OrderController {
         }
 
         try {
-            OrderCreateData data = orderService.createOrder(memberId);
+            OrderCreateData data = orderService.createOrder(memberId, request.addressId());
             return ResponseEntity.ok(new OrderCreateResponse("주문이 완료되었습니다.", data));
         } catch (EmptyCartException | OutOfStockException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        } catch (AddressNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (AddressAccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         }
     }
 
@@ -85,10 +103,16 @@ public class OrderController {
                   "message": "로그인이 필요합니다."
                 }
                 """))),
-            @ApiResponse(responseCode = "404", description = "상품 옵션 또는 회원을 찾을 수 없음",
+            @ApiResponse(responseCode = "403", description = "본인의 배송지가 아님",
                     content = @Content(examples = @ExampleObject(value = """
                 {
-                  "message": "ProductOptionNotFoundException.message 또는 MemberNotFoundException.message"
+                  "message": "AddressAccessDeniedException.message"
+                }
+                """))),
+            @ApiResponse(responseCode = "404", description = "상품 옵션, 배송지 또는 회원을 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "ProductOptionNotFoundException.message 또는 AddressNotFoundException.message 또는 MemberNotFoundException.message"
                 }
                 """)))
     })
@@ -105,13 +129,16 @@ public class OrderController {
                     memberId,
                     (long) request.productId(),
                     (long) request.optionId(),
-                    request.quantity()
+                    request.quantity(),
+                    request.addressId()
             );
             return ResponseEntity.ok(new OrderCreateResponse("주문이 완료되었습니다.", data));
-        } catch (ProductOptionNotFoundException | MemberNotFoundException e) {
+        } catch (ProductOptionNotFoundException | MemberNotFoundException | AddressNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
         } catch (ProductOptionMismatchException | InvalidQuantityException | OutOfStockException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        } catch (AddressAccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         }
     }
 
