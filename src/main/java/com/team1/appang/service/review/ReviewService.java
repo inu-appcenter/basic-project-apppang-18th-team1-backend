@@ -19,6 +19,7 @@ import com.team1.appang.exception.ProductNotFoundException;
 import com.team1.appang.exception.ReviewAccessDeniedException;
 import com.team1.appang.exception.ReviewNotFoundException;
 import com.team1.appang.exception.ReviewPurchaseRequiredException;
+import com.team1.appang.exception.SelfReviewHelpfulException;
 import com.team1.appang.repository.MemberRepository;
 import com.team1.appang.repository.OrderRepository;
 import com.team1.appang.repository.ProductRepository;
@@ -111,6 +112,10 @@ public class ReviewService {
     public ReviewHelpfulToggleResponse toggleHelpful(Long reviewId, Long memberId) {
         ProductReview review = reviewRepository.findById(reviewId)
                 .orElseThrow(ReviewNotFoundException::new);
+
+        if (review.getMember().getId().equals(memberId)) {
+            throw new SelfReviewHelpfulException();
+        }
 
         Optional<ReviewHelpful> existing = reviewHelpfulRepository.findByMemberIdAndProductReviewId(memberId, reviewId);
 

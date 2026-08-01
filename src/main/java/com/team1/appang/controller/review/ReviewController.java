@@ -13,6 +13,7 @@ import com.team1.appang.exception.ProductNotFoundException;
 import com.team1.appang.exception.ReviewAccessDeniedException;
 import com.team1.appang.exception.ReviewNotFoundException;
 import com.team1.appang.exception.ReviewPurchaseRequiredException;
+import com.team1.appang.exception.SelfReviewHelpfulException;
 import com.team1.appang.service.auth.AuthService;
 import com.team1.appang.service.review.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -146,6 +147,12 @@ public class ReviewController {
                   "message": "로그인이 필요합니다."
                 }
                 """))),
+            @ApiResponse(responseCode = "403", description = "본인이 작성한 리뷰임",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "SelfReviewHelpfulException.message"
+                }
+                """))),
             @ApiResponse(responseCode = "404", description = "리뷰를 찾을 수 없음",
                     content = @Content(examples = @ExampleObject(value = """
                 {
@@ -169,6 +176,8 @@ public class ReviewController {
             return ResponseEntity.ok(response);
         } catch (ReviewNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (SelfReviewHelpfulException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         }
     }
 
