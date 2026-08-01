@@ -3,9 +3,13 @@ package com.team1.appang.controller.order;
 import com.team1.appang.dto.MessageResponse;
 import com.team1.appang.dto.order.*;
 import com.team1.appang.exception.EmptyCartException;
+import com.team1.appang.exception.InvalidQuantityException;
+import com.team1.appang.exception.MemberNotFoundException;
 import com.team1.appang.exception.OrderCancelNotAllowedException;
 import com.team1.appang.exception.OrderNotFoundException;
 import com.team1.appang.exception.OutOfStockException;
+import com.team1.appang.exception.ProductOptionMismatchException;
+import com.team1.appang.exception.ProductOptionNotFoundException;
 import com.team1.appang.service.auth.AuthService;
 import com.team1.appang.service.order.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,6 +64,53 @@ public class OrderController {
             OrderCreateData data = orderService.createOrder(memberId);
             return ResponseEntity.ok(new OrderCreateResponse("주문이 완료되었습니다.", data));
         } catch (EmptyCartException | OutOfStockException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    //바로구매 API (장바구니를 거치지 않고 상품 하나를 즉시 주문)
+    @Operation(summary = "바로구매", description = "장바구니를 거치지 않고 상품 하나를 즉시 주문합니다. 로그인이 필요합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "주문 생성 성공",
+                    content = @Content(schema = @Schema(implementation = OrderCreateResponse.class))),
+            @ApiResponse(responseCode = "400", description = "옵션 불일치, 수량 값이 올바르지 않거나 재고가 부족함",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "ProductOptionMismatchException.message 또는 InvalidQuantityException.message 또는 OutOfStockException.message"
+                }
+                """))),
+            @ApiResponse(responseCode = "401", description = "로그인이 필요함",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "로그인이 필요합니다."
+                }
+                """))),
+            @ApiResponse(responseCode = "404", description = "상품 옵션 또는 회원을 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                {
+                  "message": "ProductOptionNotFoundException.message 또는 MemberNotFoundException.message"
+                }
+                """)))
+    })
+    @PostMapping("/buy-now")
+    public ResponseEntity<?> buyNow(@RequestBody BuyNowRequest request) {
+        Long memberId = authService.getCurrentMemberId();
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("로그인이 필요합니다."));
+        }
+
+        try {
+            OrderCreateData data = orderService.buyNow(
+                    memberId,
+                    (long) request.productId(),
+                    (long) request.optionId(),
+                    request.quantity()
+            );
+            return ResponseEntity.ok(new OrderCreateResponse("주문이 완료되었습니다.", data));
+        } catch (ProductOptionNotFoundException | MemberNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        } catch (ProductOptionMismatchException | InvalidQuantityException | OutOfStockException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
