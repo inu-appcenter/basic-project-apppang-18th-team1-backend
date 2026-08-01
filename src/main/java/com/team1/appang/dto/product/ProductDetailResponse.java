@@ -53,24 +53,26 @@ public record ProductDetailResponse(
             int price,
             @Schema(description = "배송 타입 표시명", example = "로켓배송")
             String shippingType,
-            @Schema(description = "절약 금액", example = "1000")
+            @Schema(description = "절약 금액 (상품 할인 금액 - 옵션 추가 금액)", example = "1000")
             int saveAmount,
             @Schema(description = "인기 옵션 여부", example = "true")
             boolean isPopular
     ) {
-        public static ProductOptionResponse from(ProductOption option) {
+        //saveAmount는 저장값이 아니라 상품의 할인 금액(정가-판매가)에서 옵션 추가 금액을 뺀 값으로 매번 계산
+        public static ProductOptionResponse from(ProductOption option, int productSaveAmount) {
             return new ProductOptionResponse(
                     option.getId(),
                     option.getOptionName() + " " + option.getOptionValue(), //예: "색상 화이트+그레이"
                     option.getAdditionalPrice(),
                     option.getShippingType() != null ? option.getShippingType().getDisplayName() : null,
-                    option.getSaveAmount(),
+                    productSaveAmount - option.getAdditionalPrice(),
                     option.isPopular()
             );
         }
     }
 
     public static ProductDetailResponse from(Product product, List<ProductOption> options, boolean isWishlist) {
+        int productSaveAmount = product.getOriginPrice() - product.getSalePrice();
         return new ProductDetailResponse(
                 product.getId(),
                 ImageUtils.parseImages(product.getMainImageUrl(), product.getSubImages()),
@@ -81,7 +83,7 @@ public record ProductDetailResponse(
                 //discountRate는 저장값이 아니라 정가/판매가로부터 매번 계산
                 Math.round((product.getOriginPrice() - product.getSalePrice()) * 100f / product.getOriginPrice()),
                 product.getSalePrice(),
-                options.stream().map(ProductOptionResponse::from).toList(),
+                options.stream().map(option -> ProductOptionResponse.from(option, productSaveAmount)).toList(),
                 ImageUtils.parseImageList(product.getDetailImages())
         );
     }
