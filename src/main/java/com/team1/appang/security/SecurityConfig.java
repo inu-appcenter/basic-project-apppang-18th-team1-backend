@@ -64,6 +64,7 @@ public class SecurityConfig {
                         .requestMatchers( "/api/main-banners/**").permitAll() //메인 배너는 로그인 없이도 조회 가능해야 함
                         .requestMatchers( "/api/cart/**").permitAll() //장바구니도 접근 추가
                         .requestMatchers( "/api/orders/**").permitAll() //주문도 컨트롤러에서 직접 401 처리하도록 추가
+                        .requestMatchers( "/api/addresses/**").permitAll() //배송지도 컨트롤러에서 직접 401 처리하도록 추가
                         .requestMatchers( "/api/search/**").permitAll() //검색 추가
                         .requestMatchers(
                                 "/swagger-ui/**",
