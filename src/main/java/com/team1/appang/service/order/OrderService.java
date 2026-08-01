@@ -209,6 +209,11 @@ public class OrderService {
                 order.getOrderStatus().getDisplayName(),
                 order.getFinalPaymentPrice(),
                 order.getCreatedAt(),
+                order.getShippingRecipientName(),
+                order.getShippingRecipientPhone(),
+                order.getShippingMainAddress(),
+                order.getShippingDetailAddress(),
+                order.getShippingDeliveryMessage(),
                 order.getItems().stream().map(this::toOrderItemData).toList()
         );
     }
