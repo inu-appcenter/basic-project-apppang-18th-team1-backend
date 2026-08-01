@@ -3,6 +3,7 @@ package com.team1.appang.repository;
 import com.team1.appang.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -18,4 +19,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "where o.member.id = :memberId " +
             "order by o.createdAt desc")
     List<Order> findByMemberIdWithItems(Long memberId);
+
+    //해당 회원이 이 상품을 구매한 이력이 있는지 확인 (리뷰 작성 자격 검증용)
+    //취소된 주문은 구매로 인정하지 않음
+    @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.items i JOIN i.productOption po " +
+            "WHERE o.member.id = :memberId AND po.product.id = :productId " +
+            "AND o.orderStatus <> com.team1.appang.entity.OrderStatus.CANCELLED")
+    boolean existsPurchaseByMemberAndProduct(@Param("memberId") Long memberId, @Param("productId") Long productId);
 }

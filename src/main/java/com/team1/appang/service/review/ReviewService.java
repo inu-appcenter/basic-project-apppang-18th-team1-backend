@@ -18,7 +18,9 @@ import com.team1.appang.exception.MemberNotFoundException;
 import com.team1.appang.exception.ProductNotFoundException;
 import com.team1.appang.exception.ReviewAccessDeniedException;
 import com.team1.appang.exception.ReviewNotFoundException;
+import com.team1.appang.exception.ReviewPurchaseRequiredException;
 import com.team1.appang.repository.MemberRepository;
+import com.team1.appang.repository.OrderRepository;
 import com.team1.appang.repository.ProductRepository;
 import com.team1.appang.repository.ProductReviewRepository;
 import com.team1.appang.repository.ReviewHelpfulRepository;
@@ -45,6 +47,7 @@ public class ReviewService {
     private final MemberRepository memberRepository;
     private final ReviewMediaRepository reviewMediaRepository;
     private final ReviewHelpfulRepository reviewHelpfulRepository;
+    private final OrderRepository orderRepository;
     @Transactional
     public ReviewCreateResponse createReview(Long productId, Long memberId, ReviewCreateRequest request) {
         Product product = productRepository.findById(productId)
@@ -52,6 +55,11 @@ public class ReviewService {
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
+
+        //구매 이력이 없으면 리뷰 작성 불가 (취소된 주문은 구매로 인정하지 않음)
+        if (!orderRepository.existsPurchaseByMemberAndProduct(memberId, productId)) {
+            throw new ReviewPurchaseRequiredException();
+        }
 
         // 리뷰 생성
         ProductReview review = ProductReview.builder()
