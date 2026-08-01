@@ -2,6 +2,8 @@ package com.team1.appang.service.order;
 
 import com.team1.appang.dto.order.*;
 import com.team1.appang.entity.*;
+import com.team1.appang.exception.AddressAccessDeniedException;
+import com.team1.appang.exception.AddressNotFoundException;
 import com.team1.appang.exception.EmptyCartException;
 import com.team1.appang.exception.InvalidQuantityException;
 import com.team1.appang.exception.MemberNotFoundException;
@@ -10,6 +12,7 @@ import com.team1.appang.exception.OrderNotFoundException;
 import com.team1.appang.exception.OutOfStockException;
 import com.team1.appang.exception.ProductOptionMismatchException;
 import com.team1.appang.exception.ProductOptionNotFoundException;
+import com.team1.appang.repository.AddressRepository;
 import com.team1.appang.repository.CartItemRepository;
 import com.team1.appang.repository.MemberRepository;
 import com.team1.appang.repository.OrderRepository;
@@ -28,10 +31,11 @@ public class OrderService {
     private final CartItemRepository cartItemRepository;
     private final MemberRepository memberRepository;
     private final ProductOptionRepository productOptionRepository;
+    private final AddressRepository addressRepository;
 
     //장바구니에서 선택된(isSelected) 상품들로 주문을 생성하는 로직 (체크아웃)
     @Transactional
-    public OrderCreateData createOrder(Long memberId) {
+    public OrderCreateData createOrder(Long memberId, Long addressId) {
         List<CartItem> selectedItems = cartItemRepository.findByMemberIdWithProductInfo(memberId).stream()
                 .filter(CartItem::isSelected)
                 .toList();
@@ -39,6 +43,8 @@ public class OrderService {
         if (selectedItems.isEmpty()) {
             throw new EmptyCartException();
         }
+
+        Address address = findOwnedAddress(memberId, addressId);
 
         //재고 검증 + 금액 합산을 먼저 끝내고, 검증 통과 후에만 주문 생성/재고 차감으로 넘어감
         int totalProductPrice = 0;
@@ -62,6 +68,11 @@ public class OrderService {
                 .finalPaymentPrice(finalPaymentPrice)
                 .orderStatus(OrderStatus.ORDERED)
                 .member(selectedItems.get(0).getMember())
+                .shippingRecipientName(address.getRecipientName())
+                .shippingRecipientPhone(address.getRecipientPhone())
+                .shippingMainAddress(address.getMainAddress())
+                .shippingDetailAddress(address.getDetailAddress())
+                .shippingDeliveryMessage(address.getDeliveryMessage())
                 .build();
 
         for (CartItem cartItem : selectedItems) {
@@ -85,7 +96,7 @@ public class OrderService {
 
     //장바구니를 거치지 않고 상품 하나를 바로 주문하는 로직 (바로구매)
     @Transactional
-    public OrderCreateData buyNow(Long memberId, Long productId, Long optionId, int quantity) {
+    public OrderCreateData buyNow(Long memberId, Long productId, Long optionId, int quantity, Long addressId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
 
@@ -105,6 +116,8 @@ public class OrderService {
             throw new OutOfStockException(option.getProduct().getName() + "의 재고가 부족합니다.");
         }
 
+        Address address = findOwnedAddress(memberId, addressId);
+
         int originUnitPrice = option.getProduct().getOriginPrice() + option.getAdditionalPrice();
         int saleUnitPrice = option.getProduct().getSalePrice() + option.getAdditionalPrice();
         int totalProductPrice = originUnitPrice * quantity;
@@ -117,6 +130,11 @@ public class OrderService {
                 .finalPaymentPrice(finalPaymentPrice)
                 .orderStatus(OrderStatus.ORDERED)
                 .member(member)
+                .shippingRecipientName(address.getRecipientName())
+                .shippingRecipientPhone(address.getRecipientPhone())
+                .shippingMainAddress(address.getMainAddress())
+                .shippingDetailAddress(address.getDetailAddress())
+                .shippingDeliveryMessage(address.getDeliveryMessage())
                 .build();
 
         option.decreaseStock(quantity);
@@ -161,6 +179,17 @@ public class OrderService {
         order.cancel();
 
         return new OrderCancelData(order.getId(), order.getOrderStatus().getDisplayName());
+    }
+
+    //배송지를 조회하고 본인 소유인지 검증 (AddressService.findOwnedAddress와 동일한 검증, 서비스 간 의존을 피하기 위해 중복)
+    private Address findOwnedAddress(Long memberId, Long addressId) {
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(AddressNotFoundException::new);
+
+        if (!address.getMember().getId().equals(memberId)) {
+            throw new AddressAccessDeniedException();
+        }
+        return address;
     }
 
     private OrderCreateData toOrderCreateData(Order order) {
